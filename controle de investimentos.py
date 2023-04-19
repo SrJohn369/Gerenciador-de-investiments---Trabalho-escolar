@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import ttk
 from tkinter import messagebox
 import sqlite3
 import tkinter as tk
@@ -80,8 +81,8 @@ class BancoDeDados:
 
 class Funcs(BancoDeDados):
     def __init__(self, *args):
-        """indices: 0 ← Frame | 1 ← get.Entry | 2 ← get.Variável | 3+ ← Lista (Não serão considerados Frame, Entry e nem a
-        Variavel apenas a lista Lista) """
+        """indices: 0 ← Frame | 1 ← get.Entry | 2 ← get.Variável | 3+ ← Lista (Não serão considerados Frame, Entry e
+         nem a Variavel apenas a lista Lista) """
         self.frame = self.entry = self.variavel = None
         self.lista = []
         if len(args) == 1:
@@ -305,17 +306,17 @@ class Application:
 
     def treeview_frame(self):
         #   CRIANDO FRAME PARA TREEVIEW
-        self.tree_frame = Frame(self.inicio_frame, background='black')
+        self.tree_frame = Frame(self.inicio_frame, background='gray8')
 
         #   CONFIGURANDO FRAME
-        self.tree_frame.place(y=150, x=200, relheight=1, relwidth=1)
+        self.tree_frame.place(y=80, x=10, width=580, height=312)
 
     def frame_investimento(self):
         #   CRIANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
         self.bt_voltar()
         # |---LABEL---|
-        lb_cadastrar_investimento = Label(self.inicio_frame, text="Cadastrar Investimento", font=('KacstOffice', '15'),
+        lb_cadastrar_investimento = Label(self.inicio_frame, text="Seus Investimentos", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
 
         #   CONFIGURANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
@@ -327,14 +328,38 @@ class Application:
 
         #   CRIANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
-        self.bt_filtro = Button(self.tree_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+        self.bt_filtro = Button(self.tree_frame, text='Filtrar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                            borderwidth=2, highlightbackground='black')
+        self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                borderwidth=2, highlightbackground='black')
+        self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                 borderwidth=2, highlightbackground='black')
         # |---TREEVIEW---|
+        self.treeview = ttk.Treeview(self.tree_frame, height=3, columns=('Cod. Ativo', 'Data', 'Qtd', 'V. unit', 'c/v',
+                                                                         'corretagem', 'V. op', 'imposto', 'V. Final'))
 
         #   CONFIGURANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
-        self.bt_filtro.place(y=0.5, x=0.5)
+        self.bt_filtro.place(x=10, y=5)
+        self.bt_remover.place(x=480, y=5)
+        self.bt_editar.place(x=400, y=5)
         # |---TREEVIEW---|
+        self.treeview.place(y=40, x=10, width=558, height=265)
+        # cabeçalho
+        self.treeview.heading('#0', text='Cod. Ativo')
+        self.treeview.heading('#1', text='Data')
+        self.treeview.heading('#2', text='Qtd. Papéis')
+        self.treeview.heading('#3', text='Valor Unitário')
+        self.treeview.heading('#4', text='Tipo da ordem(Compra/Venda)')
+        self.treeview.heading('#5', text='Corretagem')
+        self.treeview.heading('#6', text='Valor da Operação')
+        self.treeview.heading('#7', text='Imposto')
+        self.treeview.heading('#8', text='Valor final')
+        # espaçamento das colunas
+        self.treeview.column('#0', width=100)
+        self.treeview.column('#1', width=100)
+        self.treeview.column('#2', width=100)
+        self.treeview.column('#3', width=150)
 
 
 
