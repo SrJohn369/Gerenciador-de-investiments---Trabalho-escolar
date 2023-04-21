@@ -4,16 +4,30 @@ from tkinter import messagebox
 import sqlite3
 import tkinter as tk
 from tkcalendar import Calendar, DateEntry
+from  datetime import date
 
 
 class BancoDeDados:
+    def __init__(self, nome_banco):
+        self.__abrirBanco(nome_banco)
+        self.__criarTabela('Ativos', 'Ativo VARCHAR(7) PRIMARY KEY')
+        self.__criarTabela('Acoes', 'acao                   VARCHAR(7),'
+                                    'data                   DATE,'
+                                    'quantidade_papeis      SMALLINT,'
+                                    'valor_unitario         NUMERIC(7,2),'
+                                    'tipo_de_ordem          VARCHAR(7),'
+                                    'corretagem             NUMERIC(5,2),'
+                                    'valor_da_opercao       NUMERIC(7,2),'
+                                    'imposto                NUMERIC(6,2),'
+                                    'valor_final            NUMERIC(7,2),'
+                                    'FOREIGN KEY (acao)'
+                                    '   REFERENCES Ativos(Ativo)')
 
-    def abrirBanco(self, nomeBanco='Investimentos'):
+    def __abrirBanco(self, nomeBanco):
         self.banco = sqlite3.connect(f'{nomeBanco}.db')
         self.cursor = self.banco.cursor()
 
-    def criarTabela(self, nomeTabela: str, colunasEDados: str) -> bool:
-        self.abrirBanco()
+    def __criarTabela(self, nomeTabela: str, colunasEDados: str) -> bool:
 
         try:
             self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS {nomeTabela} 
@@ -25,8 +39,7 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def atualizarTabela(self, nomeTabela: str, set:str, where:str):
-        self.abrirBanco()
+    def atualizarTabela(self, nomeTabela: str, set: str, where: str):
 
         self.cursor.execute(f"""
         UPDATE {nomeTabela}
@@ -36,7 +49,6 @@ class BancoDeDados:
     def introduzirDados(self, nome_tabela: str, especifico: bool, valores: str,
                         colum_especificas: str = 'Default') -> bool:
         """o parametro colum_especificas pode ser usado somente quando o parametro 'especifico' for True"""
-        self.abrirBanco()
 
         if especifico:
             try:
@@ -59,12 +71,14 @@ class BancoDeDados:
             except sqlite3.OperationalError as err:
                 print(err)
                 return False
+            except sqlite3.IntegrityError as interr:
+                print(interr)
+                return False
 
         self.banco.commit()
         return True
 
     def delete(self, tabela: str) -> bool:
-        self.abrirBanco()
 
         try:
             self.cursor.execute(f"""DROP TABLE {tabela};""")
@@ -74,19 +88,27 @@ class BancoDeDados:
             print(err)
             return False
 
-    def select(self, select: str, from1: str):
-        for row in self.cursor.execute(f"SELECT {select} FROM {from1}"):
-            print(row)
+    def select(self, select: str, from1: str, order_by=False, coluna='default', ordem='ASC'):
+        if not order_by:
+            for row in self.cursor.execute(f"SELECT {select} FROM {from1}"):
+                print(row)
+        else:
+            lista = self.cursor.execute(f"SELECT {select} FROM {from1} ORDER BY {coluna} {ordem}")
+            return lista
 
 
-class Funcs(BancoDeDados):
+class Funcs:
+    __ano = int(date.today().year)
+    __mes = int(date.today().month)
+    __dia = int(date.today().day)
+
     def __init__(self, *args):
-        """indices: 0 ← Frame | 1 ← get.Entry | 2 ← get.Variável | 3+ ← Lista (Não serão considerados Frame, Entry e
+        """indices: 0 ← Frame/treview | 1 ← get.Entry | 2 ← get.Variável | 3+ ← Lista (Não serão considerados Frame, Entry e
          nem a Variavel apenas a lista Lista) """
-        self.frame = self.entry = self.variavel = None
+        self.frame_treeview = self.entry = self.variavel = None
         self.lista = []
         if len(args) == 1:
-            self.frame = args[0]
+            self.frame_treeview = args[0]
         elif len(args) == 2:
             self.entry = args[1]
         elif len(args) == 3:
@@ -95,9 +117,9 @@ class Funcs(BancoDeDados):
             self.lista = args
 
     def abrir_calendario(self):
-        self.calendario = Calendar(self.frame, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
+        self.calendario = Calendar(self.frame_treeview, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
                                    locale='pt_br')
-        self.get_btn_data = Button(self.frame, text='Inserir data', command=lambda: self.__por_entry())
+        self.get_btn_data = Button(self.frame_treeview, text='Inserir data', command=lambda: self.__por_entry())
 
         self.get_btn_data.place(x=270, y=67)
         self.calendario.place(x=240, y=100)
@@ -118,6 +140,57 @@ class Funcs(BancoDeDados):
         self.lista[5].delete(0, END)
         self.lista[6].delete(0, END)
         self.lista[7].delete(0, END)
+
+    def salvar(self):
+        banco = BancoDeDados('Investimentos')
+        # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
+        # garantindo que o codigo não esteja vazío
+        if self.lista[0].get() == '':
+            messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
+            return False
+        # garantindo que a data não ultrapasse a data atual
+        elif int(self.lista[1].get()[6:10]) > self.__ano:
+            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+            return False
+        # garantindo que a data não ultrapasse a data atual
+        elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) > self.__mes:
+            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+            return False
+        # garantindo que a data não ultrapasse a data atual
+        elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and\
+                int(self.lista[1].get()[0:2]) > self.__dia:
+            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+            return False
+        # garantindo que a haja um tipo de operação, compra ou venda
+        elif self.lista[4].get() == '----':
+            messagebox.showerror('Controle de investimentos',
+                                 'O campo "Tipo Operação" não possui uma opção de compra ou venda!')
+            return False
+
+        # verifica se o ativo ja existe na tabela ativo
+        if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
+            banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+                                                  f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
+                                                  f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
+                                                  f"'{self.lista[6].get()}', '{self.lista[7].get()}',"
+                                                  f"'{self.lista[8].get()}'")
+            banco.select('*', 'Ativos')
+            messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+        else:
+            banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+                                                  f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
+                                                  f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
+                                                  f"'{self.lista[6].get()}', '{self.lista[7].get()}',"
+                                                  f"'{self.lista[8].get()}'")
+            messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+            banco.select('*', 'Acoes')
+
+    def visualizar_investimentos(self):
+        banco = BancoDeDados('Investimentos')
+
+        lista = banco.select('*', 'Acoes', True, 'data', ordem='DESC')
+        for i in lista:
+            self.frame_treeview.insert("", END, values=i)
 
 
 class Application:
@@ -165,18 +238,23 @@ class Application:
             Funcs(self.inicio_frame, self.entry_data).abrir_calendario()
         elif func == 7:
             self.frame_investimento()
+            Funcs(self.treeview).visualizar_investimentos()
         elif func == 6:
             Funcs(
                 self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario,
                 self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
             ).limpa_tela()
+        elif func == 3:
+            Funcs(
+                self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario, self.varCV,
+                self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
+            ).salvar()
 
     def bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                            borderwidth=2, highlightbackground='black', command=lambda: self.chamada(2))
 
         bt_voltar.place(x=20, y=10, relheight=0.07)
-
 
     def frame_principal(self):
         #   CRIANDO VARIAVEIS PARA FRAME PRINCIPAL
@@ -196,12 +274,12 @@ class Application:
         cad_btn = tk.Button(self.options_frame, text='Cadastrar', font=('KacstOffice', '10'), bg='#2fc7f4',
                             command=lambda: self.chamada(1))
         acess = tk.Button(self.options_frame, text='Investimentos', font=('KacstOffice', '10'), bg='#2fc7f4',
-                          command=lambda : self.chamada(7))
+                          command=lambda: self.chamada(7))
 
         #   CONFIGURANDO FRAME PRINCIPAL
         # |---botoes---|
-        cad_btn.pack(pady=130, anchor='center')
-        acess.place(x=13, y=200)
+        cad_btn.pack(pady=100, anchor='center')
+        acess.pack(anchor='center')
         # |---linha---|
         l_linha.place(x=0, y=70)
         title_op.place(x=45, y=20)
@@ -231,9 +309,8 @@ class Application:
     def frame_cadastro(self):
         # LISTA e VAR PARA OPTIONMENU
         listaOP = ['----', 'Compra', 'Venda']
-        varCV = StringVar()
-        varCV.set(listaOP[0])
-        self.valorVariavelCV = varCV.get()
+        self.varCV = StringVar()
+        self.varCV.set(listaOP[0])
 
         #   CRIANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
@@ -242,9 +319,11 @@ class Application:
                                 borderwidth=2, highlightbackground='black',
                                 command=lambda: self.chamada(6, new_frame=False))
         self.bt_salvar = Button(self.inicio_frame, text='Salvar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                           borderwidth=2, highlightbackground='black')
+                                borderwidth=2, highlightbackground='black',
+                                command=lambda: self.chamada(3, new_frame=False))
         self.bt_data = Button(self.inicio_frame, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                           borderwidth=2, highlightbackground='black', command=lambda: self.chamada(8, new_frame=False))
+                              borderwidth=2, highlightbackground='black',
+                              command=lambda: self.chamada(8, new_frame=False))
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Cadastrar Investimento", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
@@ -252,20 +331,20 @@ class Application:
         lb_quantidade_papeis = Label(self.inicio_frame, text='Qnt. De Papéis', font=('KacstOffice', '10'),
                                      bg='black', fg='white')
         lb_valor_unitario = Label(self.inicio_frame, text='Valor Unit.', font=('KacstOffice', '10'),
-                                     bg='black', fg='white')
+                                  bg='black', fg='white')
         lb_compra_venda = Label(self.inicio_frame, text='Tipo Operação', font=('KacstOffice', '10'),
-                                     bg='black', fg='white')
+                                bg='black', fg='white')
         lb_taxa_corretagem = Label(self.inicio_frame, text='Corretagem', font=('KacstOffice', '10'),
-                                     bg='black', fg='white')
+                                   bg='black', fg='white')
         lb_valor_operacao = Label(self.inicio_frame, text='Valor Op.', font=('KacstOffice', '10'),
-                                     bg='black', fg='white')
+                                  bg='black', fg='white')
         lb_imposto = Label(self.inicio_frame, text='Imposto', font=('KacstOffice', '10'),
-                                     bg='black', fg='white')
+                           bg='black', fg='white')
         lb_valor_final = Label(self.inicio_frame, text='Valor Final', font=('KacstOffice', '10'),
-                                    bg='black', fg='white')
+                               bg='black', fg='white')
 
         # |---OPTIONMENU---|
-        op_compraVenda = OptionMenu(self.inicio_frame, varCV, *listaOP)
+        op_compraVenda = OptionMenu(self.inicio_frame, self.varCV, *listaOP)
         # |---ENTRY---|
         self.entry_codigo = Entry(self.inicio_frame, width=10)
         self.entry_data = Entry(self.inicio_frame, width=10)
@@ -329,40 +408,53 @@ class Application:
         #   CRIANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
         self.bt_filtro = Button(self.tree_frame, text='Filtrar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                           borderwidth=2, highlightbackground='black')
-        self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black')
-        self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+        self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                  borderwidth=2, highlightbackground='black')
+        self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                borderwidth=2, highlightbackground='black')
         # |---TREEVIEW---|
-        self.treeview = ttk.Treeview(self.tree_frame, height=3, columns=('Cod. Ativo', 'Data', 'Qtd', 'V. unit', 'c/v',
-                                                                         'corretagem', 'V. op', 'imposto', 'V. Final'))
+        self.treeview = ttk.Treeview(self.tree_frame, height=3)
+        # |---SCROLLBAR---|
+        #   se não defininir o command na Scrollbar e não configurar a qauntidade de colunas na treeview a barra de
+        #   rolagem provavelmente não funcionará
+        self.scrollbar_vertical = Scrollbar(self.tree_frame, orient='vertical', command=self.treeview.yview)
+        self.scrollbar_horizontal = Scrollbar(self.tree_frame, orient='horizontal', command=self.treeview.xview)
+        self.treeview.configure(yscrollcommand=self.scrollbar_vertical.set)
+        self.treeview.configure(xscrollcommand=self.scrollbar_horizontal.set)
 
         #   CONFIGURANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
-        self.bt_filtro.place(x=10, y=5)
-        self.bt_remover.place(x=480, y=5)
-        self.bt_editar.place(x=400, y=5)
+        self.bt_filtro.place(relx=0.015, rely=0.015)
+        self.bt_remover.place(relx=0.83, rely=0.015)
+        self.bt_editar.place(relx=0.70, rely=0.015)
         # |---TREEVIEW---|
-        self.treeview.place(y=40, x=10, width=558, height=265)
+        self.treeview.place(rely=0.13, relx=0.015, relwidth=0.9365, relheight=0.85)
+        self.treeview["columns"] = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
+        self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # cabeçalho
-        self.treeview.heading('#0', text='Cod. Ativo')
-        self.treeview.heading('#1', text='Data')
-        self.treeview.heading('#2', text='Qtd. Papéis')
-        self.treeview.heading('#3', text='Valor Unitário')
-        self.treeview.heading('#4', text='Tipo da ordem(Compra/Venda)')
-        self.treeview.heading('#5', text='Corretagem')
-        self.treeview.heading('#6', text='Valor da Operação')
-        self.treeview.heading('#7', text='Imposto')
-        self.treeview.heading('#8', text='Valor final')
+        self.treeview.heading('1', text='Cod. Ativo')
+        self.treeview.heading('2', text='Data')
+        self.treeview.heading('3', text='Qtd. Papéis')
+        self.treeview.heading('4', text='Valor Unitário')
+        self.treeview.heading('5', text='Compra/Venda')
+        self.treeview.heading('6', text='Corretagem')
+        self.treeview.heading('7', text='Valor da Operação')
+        self.treeview.heading('8', text='Imposto')
+        self.treeview.heading('9', text='Valor final')
         # espaçamento das colunas
-        self.treeview.column('#0', width=100)
-        self.treeview.column('#1', width=100)
-        self.treeview.column('#2', width=100)
-        self.treeview.column('#3', width=150)
-
-
+        self.treeview.column("1", width=90, anchor='c')
+        self.treeview.column("2", width=90, anchor='c')
+        self.treeview.column("3", width=100, anchor='c')
+        self.treeview.column("4", width=120, anchor='c')
+        self.treeview.column("5", width=120, anchor='c')
+        self.treeview.column("6", width=120, anchor='c')
+        self.treeview.column("7", width=180, anchor='c')
+        self.treeview.column("8", width=90, anchor='c')
+        self.treeview.column("9", width=120, anchor='c')
+        # |---CROLLBAR---|
+        self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
+        self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
 
 
 Application()
-
