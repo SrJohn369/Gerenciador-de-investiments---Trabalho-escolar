@@ -150,7 +150,17 @@ class Funcs:
             return False
 
         # varificando se a data está ou não vazía
-        elif not self.lista[1].get() == '':
+        if not self.lista[1].get() == '':
+            # garantindo que é uma data válida
+            try:
+                int(self.lista[1].get()[6:10])
+                int(self.lista[1].get()[3:5])
+                int(self.lista[1].get()[0:2])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+                return False
+
             # garantindo que a data não ultrapasse a data atual
             if int(self.lista[1].get()[6:10]) > self.__ano:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
@@ -166,6 +176,9 @@ class Funcs:
                     int(self.lista[1].get()[0:2]) > self.__dia:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Data", não pode estar vazío!')
+            return False
 
         # garantindo que a haja um tipo de operação, compra ou venda
         if self.lista[4].get() == '----':
@@ -173,18 +186,136 @@ class Funcs:
                                  'O campo "Tipo Operação" não possui uma opção de compra ou venda!')
             return False
 
-        # garantindo que os valores numéricos sejam numéricos
-        elif not self.lista[2].get() == '':
-            # testa de é possivel converter para float
+        # garantindo que em QNT. DE PAPEIS os valores numéricos sejam numéricos
+        if not self.lista[2].get() == '':
+            # testa de é possivel converter para INTEIRO
             try:
                 self.lista[2] = self.lista[2].get()
                 self.lista[2] = self.lista[2].replace(",", ".")
-                float(self.lista[2])
+                if self.lista[2].count(",") >= 1 or self.lista[2].count(".") >= 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Qnt. De Papeis" só aceita valores numéricos INTEIROS '
+                                         'sem ponto flutuante, por exemplo:\n145\t(Cento e quarenta e cinco)')
+                    return False
+                int(self.lista[2])
             except ValueError as err:
                 print(err)
                 messagebox.showerror('Controle de investimentos',
                                      'O campo "Qnt. De Papeis" só aceita valores numéricos!')
                 return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
+            return False
+
+        # garantindo que em VALOR UNIT. os valores numéricos sejam numéricos
+        if not self.lista[3].get() == '':
+            # testa de é possivel converter para FLOAT
+            try:
+                self.lista[3] = self.lista[3].get()
+                self.lista[3] = self.lista[3].replace(",", ".")
+                if self.lista[3].count(",") > 1 or self.lista[3].count(".") > 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
+                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
+                                         ' e setenta e oito centavos)')
+                    return False
+                float(self.lista[3])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Valor Unit" só aceita valores numéricos!')
+                return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
+            return False
+
+        # garantindo que em CORRETAGEM. os valores numéricos sejam numéricos
+        if not self.lista[5].get() == '':
+            # testa de é possivel converter para FLOAT
+            try:
+                self.lista[5] = self.lista[5].get()
+                self.lista[5] = self.lista[5].replace(",", ".")
+                if self.lista[5].count(",") > 1 or self.lista[5].count(".") > 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
+                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
+                                         ' e setenta e oito centavos)')
+                    return False
+                float(self.lista[5])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Corretagem" só aceita valores numéricos!')
+                return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
+            return False
+
+        # garantindo que em VALOR OP. os valores numéricos sejam numéricos
+        if not self.lista[6].get() == '':
+            # testa de é possivel converter para FLOAT
+            try:
+                self.lista[6] = self.lista[6].get()
+                self.lista[6] = self.lista[6].replace(",", ".")
+                if self.lista[6].count(",") > 1 or self.lista[6].count(".") > 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Valor Op." só aceita valores numéricos com apenas um ponto '
+                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
+                                         ' e setenta e oito centavos)')
+                    return False
+                float(self.lista[6])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Valor Op." só aceita valores numéricos!')
+                return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Valor Op.", não pode estar vazío!')
+            return False
+
+        # garantindo que em IMPOSTO. os valores numéricos sejam numéricos
+        if not self.lista[7].get() == '':
+            # testa de é possivel converter para FLOAT
+            try:
+                self.lista[7] = self.lista[7].get()
+                self.lista[7] = self.lista[7].replace(",", ".")
+                if self.lista[7].count(",") > 1 or self.lista[7].count(".") > 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Imposto." só aceita valores numéricos com apenas um ponto '
+                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
+                                         ' e setenta e oito centavos)')
+                    return False
+                float(self.lista[7])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Imposto." só aceita valores numéricos!')
+                return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Imposto", não pode estar vazío!')
+            return False
+
+        # garantindo que em VALOR FINAL. os valores numéricos sejam numéricos
+        if not self.lista[8].get() == '':
+            # testa de é possivel converter para FLOAT
+            try:
+                self.lista[8] = self.lista[8].get()
+                self.lista[8] = self.lista[8].replace(",", ".")
+                if self.lista[8].count(",") > 1 or self.lista[8].count(".") > 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Valor Final." só aceita valores numéricos com apenas um ponto '
+                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
+                                         ' e setenta e oito centavos)')
+                    return False
+                float(self.lista[8])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Valor Final." só aceita valores numéricos!')
+                return False
+        else:
+            messagebox.showerror('Controle de investimentos', 'O campo "Vlor Final", não pode estar vazío!')
+            return False
 
         # verifica se o ativo ja existe na tabela ativo
         if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
