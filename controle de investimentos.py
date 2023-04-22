@@ -114,7 +114,7 @@ class Funcs:
         elif len(args) == 3:
             self.variavel = args[2]
         elif len(args) >= 4:
-            self.lista = args
+            self.lista = list(args)
 
     def abrir_calendario(self):
         self.calendario = Calendar(self.frame_treeview, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
@@ -148,40 +148,59 @@ class Funcs:
         if self.lista[0].get() == '':
             messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
             return False
-        # garantindo que a data não ultrapasse a data atual
-        elif int(self.lista[1].get()[6:10]) > self.__ano:
-            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
-            return False
-        # garantindo que a data não ultrapasse a data atual
-        elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) > self.__mes:
-            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
-            return False
-        # garantindo que a data não ultrapasse a data atual
-        elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and\
-                int(self.lista[1].get()[0:2]) > self.__dia:
-            messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
-            return False
+
+        # varificando se a data está ou não vazía
+        elif not self.lista[1].get() == '':
+            # garantindo que a data não ultrapasse a data atual
+            if int(self.lista[1].get()[6:10]) > self.__ano:
+                messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+                return False
+
+            # garantindo que a data não ultrapasse a data atual
+            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) > self.__mes:
+                messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+                return False
+
+            # garantindo que a data não ultrapasse a data atual
+            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and\
+                    int(self.lista[1].get()[0:2]) > self.__dia:
+                messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
+                return False
+
         # garantindo que a haja um tipo de operação, compra ou venda
-        elif self.lista[4].get() == '----':
+        if self.lista[4].get() == '----':
             messagebox.showerror('Controle de investimentos',
                                  'O campo "Tipo Operação" não possui uma opção de compra ou venda!')
             return False
 
+        # garantindo que os valores numéricos sejam numéricos
+        elif not self.lista[2].get() == '':
+            # testa de é possivel converter para float
+            try:
+                self.lista[2] = self.lista[2].get()
+                self.lista[2] = self.lista[2].replace(",", ".")
+                float(self.lista[2])
+            except ValueError as err:
+                print(err)
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Qnt. De Papeis" só aceita valores numéricos!')
+                return False
+
         # verifica se o ativo ja existe na tabela ativo
         if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
             banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
-                                                  f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
-                                                  f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
-                                                  f"'{self.lista[6].get()}', '{self.lista[7].get()}',"
-                                                  f"'{self.lista[8].get()}'")
-            banco.select('*', 'Ativos')
+                                                  f"'{self.lista[2]}',       '{self.lista[3]}',"
+                                                  f"'{self.lista[4].get()}', '{self.lista[5]}',"
+                                                  f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                  f"'{self.lista[8]}'")
+            banco.select('*', 'Acoes')
             messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
         else:
             banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
-                                                  f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
-                                                  f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
-                                                  f"'{self.lista[6].get()}', '{self.lista[7].get()}',"
-                                                  f"'{self.lista[8].get()}'")
+                                                  f"'{self.lista[2]}',       '{self.lista[3]}',"
+                                                  f"'{self.lista[4].get()}', '{self.lista[5]}',"
+                                                  f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                  f"'{self.lista[8]}'")
             messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
             banco.select('*', 'Acoes')
 
