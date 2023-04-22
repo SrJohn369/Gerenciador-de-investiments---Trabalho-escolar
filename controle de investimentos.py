@@ -4,7 +4,7 @@ from tkinter import messagebox
 import sqlite3
 import tkinter as tk
 from tkcalendar import Calendar, DateEntry
-from  datetime import date
+from datetime import date
 
 
 class BancoDeDados:
@@ -146,17 +146,29 @@ class Funcs:
         # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
         # garantindo que o codigo não esteja vazío
         if not self.lista[0].get() == '':
+            # VERIFICA SE TEM PONTO OU VIRGULA
             if self.lista[0].get().count(",") >= 1 or self.lista[0].get().count(".") >= 1:
                 messagebox.showerror('Controle de investimentos',
                                      'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
                                      'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
                 return False
+            # VERIFICA SE ULTRAPASSA O LIMITE DE 7 NCARACTERES
             if len(self.lista[0].get()) > 7:
                 messagebox.showerror('Controle de investimentos',
                                      'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
                                      ' no maximo.'
                                      'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
                 return False
+            try:
+                float(self.lista[0].get())
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Código" possui código inválido para B3.\nCódigos de ações possuem letras'
+                                     ' e números.\n'
+                                     'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
+                return False
+            except:
+                pass
+
         else:
             messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
             return False
@@ -184,7 +196,7 @@ class Funcs:
                 return False
 
             # garantindo que a data não ultrapasse a data atual
-            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and\
+            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and \
                     int(self.lista[1].get()[0:2]) > self.__dia:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
