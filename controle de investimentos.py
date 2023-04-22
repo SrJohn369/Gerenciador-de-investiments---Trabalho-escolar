@@ -145,7 +145,19 @@ class Funcs:
         banco = BancoDeDados('Investimentos')
         # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
         # garantindo que o codigo não esteja vazío
-        if self.lista[0].get() == '':
+        if not self.lista[0].get() == '':
+            if self.lista[0].get().count(",") >= 1 or self.lista[0].get().count(".") >= 1:
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
+                                     'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
+                return False
+            if len(self.lista[0].get()) > 7:
+                messagebox.showerror('Controle de investimentos',
+                                     'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
+                                     ' no maximo.'
+                                     'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
+                return False
+        else:
             messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
             return False
 
@@ -338,7 +350,7 @@ class Funcs:
     def visualizar_investimentos(self):
         banco = BancoDeDados('Investimentos')
 
-        lista = banco.select('*', 'Acoes', True, 'data', ordem='DESC')
+        lista = banco.select('*', 'Acoes', True, 'data', ordem='ACS')
         for i in lista:
             self.frame_treeview.insert("", END, values=i)
 
