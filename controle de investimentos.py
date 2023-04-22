@@ -362,7 +362,7 @@ class Funcs:
     def visualizar_investimentos(self):
         banco = BancoDeDados('Investimentos')
 
-        lista = banco.select('*', 'Acoes', True, 'data', ordem='ACS')
+        lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
         for i in lista:
             self.frame_treeview.insert("", END, values=i)
 
@@ -603,7 +603,7 @@ class Application:
         self.bt_remover.place(relx=0.83, rely=0.015)
         self.bt_editar.place(relx=0.70, rely=0.015)
         # |---TREEVIEW---|
-        self.treeview.place(rely=0.13, relx=0.015, relwidth=0.9365, relheight=0.85)
+        self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.805)
         self.treeview["columns"] = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # cabeçalho
