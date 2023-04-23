@@ -5,6 +5,7 @@ import sqlite3
 import tkinter as tk
 from tkcalendar import Calendar, DateEntry
 from datetime import date
+from tkinter import Toplevel as NovaJanela
 
 
 class BancoDeDados:
@@ -366,6 +367,29 @@ class Funcs:
         for i in lista:
             self.frame_treeview.insert("", END, values=i)
 
+    def editar(self):
+        # separar os dados na lista
+        id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
+        colum_1, colum_2, colum_3, colum_4, colum_5, colum_6, colum_7, colum_8, \
+            colum_9 = self.lista[0].item(id_list, 'values')
+        # separar os dados da optionmenu
+        itens = self.lista[4][1]
+        optiomenu = 0
+        for i, item in enumerate(itens):
+            if item == colum_5:
+                optiomenu = i
+        # por os dados nas entry para editar
+        self.lista[1].insert(END, colum_2)
+        self.lista[2].insert(END, colum_3)
+        self.lista[3].insert(END, colum_4)
+        # aqui tive que guardar tupla dentro de tupla de outra
+        # tupla para usar os valores e da o set() correto
+        self.lista[4][0].set(self.lista[4][1][optiomenu])
+        self.lista[5].insert(END, colum_6)
+        self.lista[6].insert(END, colum_7)
+        self.lista[7].insert(END, colum_8)
+        self.lista[8].insert(END, colum_9)
+
 
 class Application:
 
@@ -392,13 +416,9 @@ class Application:
         #   MATEM A JANELA ATIVA
         self.root.mainloop()
 
-    def chamada(self, func, new_frame=True):
+    def chamada(self, func, new_frame=True, editar=False):
         """Funções de chamada:
-        1 - Cadastrar | 2 - voltar | 3 - salvar
-        4 - editar
-        5 - excluir
-        6 - limpar
-        7 - Investimento
+        1 - Cadastrar | 2 - voltar | 3 - salvar | 4 - editar | 5 - excluir | 6 - limpar | 7 - Investimento
         8 - Data"""
         if new_frame:
             self.inicio_frame.destroy()
@@ -409,7 +429,10 @@ class Application:
         elif func == 2:
             self.seja_bem_vindoA()
         elif func == 8:
-            Funcs(self.inicio_frame, self.entry_data).abrir_calendario()
+            if not editar:
+                Funcs(self.inicio_frame, self.entry_data).abrir_calendario()
+            else:
+                Funcs(self.new_window, self.entry_data).abrir_calendario()
         elif func == 7:
             self.frame_investimento()
             Funcs(self.treeview).visualizar_investimentos()
@@ -419,10 +442,15 @@ class Application:
                 self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
             ).limpa_tela()
         elif func == 3:
-            Funcs(
-                self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario, self.varCV,
-                self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
-            ).salvar()
+            if not editar:
+                Funcs(
+                    self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario, self.varCV,
+                    self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
+                ).salvar()
+            else:
+                pass
+        elif func == 4:
+            self.tela_editar()
 
     def bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
@@ -586,7 +614,8 @@ class Application:
         self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                  borderwidth=2, highlightbackground='black')
         self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                borderwidth=2, highlightbackground='black')
+                                borderwidth=2, highlightbackground='black',
+                                command=lambda: self.chamada(4, new_frame=False))
         # |---TREEVIEW---|
         self.treeview = ttk.Treeview(self.tree_frame, height=3)
         # |---SCROLLBAR---|
@@ -629,6 +658,111 @@ class Application:
         # |---CROLLBAR---|
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
+
+    def tela_editar(self):
+        # usar para selecionar na lista da treeview
+        # verifica se tem um item selecionado
+        if not self.treeview.selection() == ():
+            # print(self.lista[0].selection()) # a função selection() retornará uma tupla, se nenhum item for
+            # selecionado retornará uma tupla vazia ()
+            id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
+
+            # LISTA e VAR PARA OPTIONMENU
+            listaOP = ['----', 'Compra', 'Venda']
+            self.editar_varCV = StringVar()
+
+            # CHAMA UMA NOVA JANELA PARA EDIÇÃO DE DADOS
+            self.new_window = NovaJanela()
+
+            # CONFIGURANDO NOVA JANELA
+            #           --- variáveis de início para centralizar a tela ---
+            w = 350
+            h = 450
+            ws = self.new_window.winfo_screenwidth()
+            hs = self.new_window.winfo_screenheight()
+            x = (ws / 2) - (w / 2)
+            y = (hs / 2) - (h / 2)
+
+            #   CONFIGURANDO JANELA
+            self.new_window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+            self.new_window.title('Plataforma de Investimentos')
+            self.new_window.resizable(False, False)
+            self.new_window.configure(background='Black')
+
+            # CONFIGURANDO
+            # |---Labels---|
+            lbl_editar = Label(self.new_window, text='Editar', font=('KacstOffice', '15'), bg='black', fg='white')
+            lbl_linha = Label(self.new_window, text='', width=700, height=1, anchor=NW, font=' Ivy 1 ', bg='#2fc7f4',
+                              highlightbackground='#F2F2F2')
+            lbl_linha_2 = Label(self.new_window, text='', width=700, height=1, anchor=NW, font=' Ivy 1 ', bg='#2fc7f4',
+                                highlightbackground='#F2F2F2')
+            lbl_ativo = Label(self.new_window, text=f'{self.treeview.item(id_list, "values")[0]}',
+                              font=('KacstOffice', '15'), bg='black', fg='white')
+            lbl_Qtn_Papeis = Label(self.new_window, text='Qtn. De Papeis', bg='black', fg='white')
+            lbl_valor_unit = Label(self.new_window, text='Valor Unit.', bg='black', fg='white')
+            lbl_corretagem = Label(self.new_window, text='Corretagem', bg='black', fg='white')
+            lbl_valor_op = Label(self.new_window, text='Valor da Operação', bg='black', fg='white')
+            lbl_imposto = Label(self.new_window, text='Imposto', bg='black', fg='white')
+            lbl_valor_final = Label(self.new_window, text='Valor final', bg='black', fg='white')
+            lbl_compra_venda = Label(self.new_window, text='Tipo Operação', bg='black', fg='white')
+            # |---Bottuns---|
+            btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                  borderwidth=2, highlightbackground='black', command=lambda: self.new_window.destroy())
+            btn_salvar = Button(self.new_window, text='Salvar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                borderwidth=2, highlightbackground='black')
+            btn_data = Button(self.new_window, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                              borderwidth=2, highlightbackground='black',
+                              command=lambda: self.chamada(8, new_frame=False))
+            # |---OPTIONMENU---|
+            op_compraVenda = OptionMenu(self.new_window, self.editar_varCV, *listaOP)
+            # |---ENTRY---|
+            self.entry_data_edit = Entry(self.new_window, width=10)
+            self.entry_qnt_de_papeis_edit = Entry(self.new_window, width=10)
+            self.entry_valor_unitario_edit = Entry(self.new_window, width=10)
+            self.entry_taxa_corretagem_edit = Entry(self.new_window, width=10)
+            self.entry_valor_da_operacao_edit = Entry(self.new_window, width=10)
+            self.entry_imposto_edit = Entry(self.new_window, width=10)
+            self.entry_valor_final_edit = Entry(self.new_window, width=10)
+
+            # |---ENTRY position---|
+            self.entry_qnt_de_papeis_edit.place(relx=0.4, rely=0.23, relheight=0.04)
+            self.entry_valor_unitario_edit.place(relx=0.4, rely=0.28, relheight=0.04)
+            self.entry_taxa_corretagem_edit.place(relx=0.4, rely=0.33, relheight=0.04)
+            self.entry_valor_da_operacao_edit.place(relx=0.4, rely=0.387, relheight=0.04)
+            self.entry_imposto_edit.place(relx=0.4, rely=0.44, relheight=0.04)
+            self.entry_valor_final_edit.place(relx=0.4, rely=0.49, relheight=0.04)
+            self.entry_data_edit.place(relx=0.53, rely=0.755, relheight=0.04)
+            # |---Labels position---|
+            lbl_editar.pack(pady=10, anchor='center')
+            lbl_linha.pack(anchor='center')
+            lbl_ativo.pack(pady=10, anchor='center')
+            lbl_Qtn_Papeis.pack(pady=3, anchor='w')
+            lbl_valor_unit.pack(anchor='w')
+            lbl_corretagem.pack(pady=3, anchor='w')
+            lbl_valor_op.pack(anchor='w')
+            lbl_imposto.pack(pady=3, anchor='w')
+            lbl_valor_final.pack(anchor='w')
+            lbl_linha_2.pack(pady=4, anchor='center')
+            lbl_compra_venda.pack(pady=5, anchor='center')
+            # |---Bottuns position---|
+            btn_cancelar.place(relx=0.05, rely=0.9, relheight=0.07)
+            btn_salvar.place(relx=0.75, rely=0.9, relheight=0.07)
+            btn_data.place(relx=0.30, rely=0.75, relheight=0.07)
+            # |---OPTIONMENU position---|
+            op_compraVenda.pack(anchor='center')
+            op_compraVenda.configure(highlightcolor='black', borderwidth=1, highlightbackground='black')
+
+            # CHAMADA DA CLASS FUNCS PARA EDITAR DADOS
+            Funcs(self.treeview, self.entry_data_edit, self.entry_qnt_de_papeis_edit,
+                  self.entry_valor_unitario_edit, (self.editar_varCV, listaOP), self.entry_taxa_corretagem_edit,
+                  self.entry_valor_da_operacao_edit, self.entry_imposto_edit, self.entry_valor_final_edit).editar()
+
+            return True
+
+        else:
+            messagebox.showerror('Controle de investimentos',
+                                 'SELECIONE UM ITEM PARA EDITAR')
+            return False
 
 
 Application()
