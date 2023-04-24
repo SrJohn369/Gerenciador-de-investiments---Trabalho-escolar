@@ -79,15 +79,23 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def delete(self, tabela: str) -> bool:
-
-        try:
-            self.cursor.execute(f"""DROP TABLE {tabela};""")
-            self.banco.commit()
-            return True
-        except sqlite3.OperationalError as err:
-            print(err)
-            return False
+    def delete(self, tabela: str, especifico=False) -> bool:
+        if not especifico:
+            try:
+                self.cursor.execute(f"""DROP TABLE {tabela};""")
+                self.banco.commit()
+                return True
+            except sqlite3.OperationalError as err:
+                print(err)
+                return False
+        else:
+            try:
+                self.cursor.execute(f"""DROP TABLE {tabela};""")
+                self.banco.commit()
+                return True
+            except sqlite3.OperationalError as err:
+                print(err)
+                return False
 
     def select(self, select: str, from1: str, order_by=False, coluna='default', ordem='ASC'):
         if not order_by:
@@ -142,37 +150,37 @@ class Funcs:
         self.lista[6].delete(0, END)
         self.lista[7].delete(0, END)
 
-    def salvar(self):
+    def salvar(self, update=False):
         banco = BancoDeDados('Investimentos')
         # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
-        # garantindo que o codigo não esteja vazío
-        if not self.lista[0].get() == '':
-            # VERIFICA SE TEM PONTO OU VIRGULA
-            if self.lista[0].get().count(",") >= 1 or self.lista[0].get().count(".") >= 1:
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
-                                     'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
+        if not update:
+            # garantindo que o codigo não esteja vazío ao salvar
+            if not self.lista[0].get() == '':
+                # VERIFICA SE TEM PONTO OU VIRGULA
+                if self.lista[0].get().count(",") >= 1 or self.lista[0].get().count(".") >= 1:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
+                                         'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
+                    return False
+                # VERIFICA SE ULTRAPASSA O LIMITE DE 7 NCARACTERES
+                if len(self.lista[0].get()) > 7:
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
+                                         ' no maximo.'
+                                         'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
+                    return False
+                try:
+                    float(self.lista[0].get())
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Código" possui código inválido para B3.\nCódigos de ações possuem letras'
+                                         ' e números.\n'
+                                         'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
+                    return False
+                except:
+                    pass
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
                 return False
-            # VERIFICA SE ULTRAPASSA O LIMITE DE 7 NCARACTERES
-            if len(self.lista[0].get()) > 7:
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
-                                     ' no maximo.'
-                                     'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
-                return False
-            try:
-                float(self.lista[0].get())
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Código" possui código inválido para B3.\nCódigos de ações possuem letras'
-                                     ' e números.\n'
-                                     'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
-                return False
-            except:
-                pass
-
-        else:
-            messagebox.showerror('Controle de investimentos', 'O campo "Código", não pode estar vazío!')
-            return False
 
         # varificando se a data está ou não vazía
         if not self.lista[1].get() == '':
@@ -343,22 +351,43 @@ class Funcs:
             return False
 
         # verifica se o ativo ja existe na tabela ativo
-        if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
-            banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
-                                                  f"'{self.lista[2]}',       '{self.lista[3]}',"
-                                                  f"'{self.lista[4].get()}', '{self.lista[5]}',"
-                                                  f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                  f"'{self.lista[8]}'")
-            banco.select('*', 'Acoes')
-            messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+        if not update:
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
+                banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+                                                      f"'{self.lista[2]}',       '{self.lista[3]}',"
+                                                      f"'{self.lista[4].get()}', '{self.lista[5]}',"
+                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                      f"'{self.lista[8]}'")
+                banco.select('*', 'Acoes')
+                messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+                return True
+            else:
+                banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+                                                      f"'{self.lista[2]}',       '{self.lista[3]}',"
+                                                      f"'{self.lista[4].get()}', '{self.lista[5]}',"
+                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                      f"'{self.lista[8]}'")
+                messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+                banco.select('*', 'Acoes')
+                return True
         else:
-            banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
-                                                  f"'{self.lista[2]}',       '{self.lista[3]}',"
-                                                  f"'{self.lista[4].get()}', '{self.lista[5]}',"
-                                                  f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                  f"'{self.lista[8]}'")
-            messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
-            banco.select('*', 'Acoes')
+
+            if lambda :Application().tela_confirmacao(update=True):
+                banco.atualizarTabela(
+                    'Acoes',
+                    f"""data =              '{self.lista[1].get()},'
+                        quantidade_papeis = '{self.lista[2].get()},'
+                        valor_unitario =    '{self.lista[3].get()},'
+                        tipo_de_ordem =     '{self.lista[4].get()},'
+                        corretagem =        '{self.lista[5].get()},'
+                        valor_da_opercao =  '{self.lista[6].get()},'
+                        imposto =           '{self.lista[7].get()},'
+                        valor_final =       '{self.lista[8].get()}'     """,
+                    f"""acao = '{self.lista[0].get()}'"""
+                )
+                self.lista[9].destroy()
+                messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+                return True
 
     def visualizar_investimentos(self):
         banco = BancoDeDados('Investimentos')
@@ -393,7 +422,7 @@ class Funcs:
 
 class Application:
 
-    def __init__(self):
+    def iniciar(self):
         #   CRIANDO VARIAVEIS PARA JANELA E FRAME PRINCIPAL
         self.root = tk.Tk()
         #           --- variáveis de início para centralizar a tela ---
@@ -448,7 +477,13 @@ class Application:
                     self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
                 ).salvar()
             else:
-                pass
+                id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
+                Funcs(
+                    self.treeview.item(id_list, "values")[0],
+                    self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
+                    self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
+                    self.entry_imposto_edit, self.entry_valor_final_edit
+                ).salvar(update=True)
         elif func == 4:
             self.tela_editar()
 
@@ -659,6 +694,25 @@ class Application:
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
 
+    def nova_tela(self, width, height, locateY=2, locateX=2):
+        # CHAMA UMA NOVA JANELA PARA EDIÇÃO DE DADOS
+        self.new_window = NovaJanela()
+
+        # CONFIGURANDO NOVA JANELA
+        #           --- variáveis de início para centralizar a tela ---
+        w = width
+        h = height
+        ws = self.new_window.winfo_screenwidth()
+        hs = self.new_window.winfo_screenheight()
+        x = (ws / locateX) - (w / 2)
+        y = (hs / locateY) - (h / 2)
+
+        #   CONFIGURANDO JANELA
+        self.new_window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        self.new_window.title('Plataforma de Investimentos')
+        self.new_window.resizable(False, False)
+        self.new_window.configure(background='Black')
+
     def tela_editar(self):
         # usar para selecionar na lista da treeview
         # verifica se tem um item selecionado
@@ -671,23 +725,7 @@ class Application:
             listaOP = ['----', 'Compra', 'Venda']
             self.editar_varCV = StringVar()
 
-            # CHAMA UMA NOVA JANELA PARA EDIÇÃO DE DADOS
-            self.new_window = NovaJanela()
-
-            # CONFIGURANDO NOVA JANELA
-            #           --- variáveis de início para centralizar a tela ---
-            w = 350
-            h = 450
-            ws = self.new_window.winfo_screenwidth()
-            hs = self.new_window.winfo_screenheight()
-            x = (ws / 2) - (w / 2)
-            y = (hs / 2) - (h / 2)
-
-            #   CONFIGURANDO JANELA
-            self.new_window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-            self.new_window.title('Plataforma de Investimentos')
-            self.new_window.resizable(False, False)
-            self.new_window.configure(background='Black')
+            self.nova_tela(350, 450, locateX=4, locateY=2)
 
             # CONFIGURANDO
             # |---Labels---|
@@ -706,10 +744,12 @@ class Application:
             lbl_valor_final = Label(self.new_window, text='Valor final', bg='black', fg='white')
             lbl_compra_venda = Label(self.new_window, text='Tipo Operação', bg='black', fg='white')
             # |---Bottuns---|
-            btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                  borderwidth=2, highlightbackground='black', command=lambda: self.new_window.destroy())
+            btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c',
+                                  fg='white',borderwidth=2, highlightbackground='black',
+                                  command=lambda: self.new_window.destroy())
             btn_salvar = Button(self.new_window, text='Salvar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                borderwidth=2, highlightbackground='black')
+                                borderwidth=2, highlightbackground='black',
+                                command=lambda: self.chamada(3, editar=True, new_frame=False))
             btn_data = Button(self.new_window, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
                               command=lambda: self.chamada(8, new_frame=False))
@@ -755,8 +795,9 @@ class Application:
             # CHAMADA DA CLASS FUNCS PARA EDITAR DADOS
             Funcs(self.treeview, self.entry_data_edit, self.entry_qnt_de_papeis_edit,
                   self.entry_valor_unitario_edit, (self.editar_varCV, listaOP), self.entry_taxa_corretagem_edit,
-                  self.entry_valor_da_operacao_edit, self.entry_imposto_edit, self.entry_valor_final_edit).editar()
-
+                  self.entry_valor_da_operacao_edit, self.entry_imposto_edit, self.entry_valor_final_edit,
+                  self.new_window).editar()
+            self.new_window.mainloop()
             return True
 
         else:
@@ -764,5 +805,31 @@ class Application:
                                  'SELECIONE UM ITEM PARA EDITAR')
             return False
 
+    def tela_confirmacao(self, update=False, delete=False):
+        # gera telinha no centro
+        self.nova_tela(300,100)
 
-Application()
+        if update:
+            # funcoes falsas para dar o retorno que eu quero
+            def confirmar():
+                self.new_window.destroy()
+                self.new_window.destroy()
+                return True
+            # LABEL
+            lbl_alterar = Label(self.new_window, text='DESEJA ALTERAR AS \nINFORMAÇÕES DA AÇÃO EDITADA?')
+            lbl_alterar.configure(font=('KacstOffice', '10'), bg='black', fg='white')
+            lbl_alterar.pack(pady=12)
+            # BUTOES
+            btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c',
+                                  fg='white', borderwidth=2, highlightbackground='black',
+                                  command=lambda: self.new_window.destroy())
+            btn_confirmar = Button(self.new_window, text='Confirmar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
+                                borderwidth=2, highlightbackground='black',
+                                command=lambda: confirmar())
+            btn_cancelar.place(relx=0.05, rely=0.65, relheight=0.30)
+            btn_confirmar.place(relx=0.65, rely=0.65, relheight=0.30)
+            if confirmar():
+                return True
+
+
+Application().iniciar()
