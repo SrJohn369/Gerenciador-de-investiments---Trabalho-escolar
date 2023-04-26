@@ -6,6 +6,7 @@ import tkinter as tk
 from tkcalendar import Calendar, DateEntry
 from datetime import date
 from tkinter import Toplevel as NovaJanela
+from time import sleep
 
 
 class BancoDeDados:
@@ -41,11 +42,20 @@ class BancoDeDados:
         return True
 
     def atualizarTabela(self, nomeTabela: str, set: str, where: str):
+        try:
+            self.cursor.execute(f"""
+            UPDATE {nomeTabela}
+            SET {set}
+            WHERE {where};""")
+            self.banco.commit()
+        except sqlite3.OperationalError as err:
+            print(err)
+            return False
+        except sqlite3.IntegrityError as interr:
+            print(interr)
+            return False
 
-        self.cursor.execute(f"""
-        UPDATE {nomeTabela}
-        SET {set}
-        WHERE {where};""")
+
 
     def introduzirDados(self, nome_tabela: str, especifico: bool, valores: str,
                         colum_especificas: str = 'Default') -> bool:
@@ -125,12 +135,13 @@ class Funcs:
         elif len(args) >= 4:
             self.lista = list(args)
 
-    def abrir_calendario(self):
+    def abrir_calendario(self) -> None:
         self.calendario = Calendar(self.frame_treeview, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
                                    locale='pt_br')
         self.get_btn_data = Button(self.frame_treeview, text='Inserir data', command=lambda: self.__por_entry())
 
         self.get_btn_data.place(x=270, y=67)
+        self.get_btn_data.configure(fg="gray75", bg="blue",font=('KacstOffice', '10', 'bold'))
         self.calendario.place(x=240, y=100)
 
     def __por_entry(self):
@@ -150,7 +161,7 @@ class Funcs:
         self.lista[6].delete(0, END)
         self.lista[7].delete(0, END)
 
-    def salvar(self, update=False):
+    def salvar(self, update=False) -> bool:
         banco = BancoDeDados('Investimentos')
         # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
         if not update:
@@ -371,23 +382,30 @@ class Funcs:
                 banco.select('*', 'Acoes')
                 return True
         else:
-
-            if lambda :Application().tela_confirmacao(update=True):
+            confirma = messagebox.askquestion('Controle de investimentos',
+                                              'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?',)
+            print(self.lista)
+            print(self.lista[1].get())
+            print(self.lista[4].get())
+            if confirma == 'yes':
                 banco.atualizarTabela(
                     'Acoes',
-                    f"""data =              '{self.lista[1].get()},'
-                        quantidade_papeis = '{self.lista[2].get()},'
-                        valor_unitario =    '{self.lista[3].get()},'
-                        tipo_de_ordem =     '{self.lista[4].get()},'
-                        corretagem =        '{self.lista[5].get()},'
-                        valor_da_opercao =  '{self.lista[6].get()},'
-                        imposto =           '{self.lista[7].get()},'
-                        valor_final =       '{self.lista[8].get()}'     """,
-                    f"""acao = '{self.lista[0].get()}'"""
+                    f"""data =              '{self.lista[1].get()}',
+                        quantidade_papeis = '{self.lista[2]}',
+                        valor_unitario =    '{self.lista[3]}',
+                        tipo_de_ordem =     '{self.lista[4].get()}',
+                        corretagem =        '{self.lista[5]}',
+                        valor_da_opercao =  '{self.lista[6]}',
+                        imposto =           '{self.lista[7]}',
+                        valor_final =       '{self.lista[8]}'     """,
+                    f"""acao = '{self.lista[0]}'"""
                 )
                 self.lista[9].destroy()
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
+            else:
+                print('cancealdo')
+                return False
 
     def visualizar_investimentos(self):
         banco = BancoDeDados('Investimentos')
@@ -439,31 +457,31 @@ class Application:
         self.root.resizable(False, False)
 
         #   FUNÇÕES DE INÍCIO
-        self.frame_principal()
-        self.seja_bem_vindoA(frame=True)
+        self.__frame_principal()
+        self.__seja_bem_vindoA(frame=True)
 
         #   MATEM A JANELA ATIVA
         self.root.mainloop()
 
-    def chamada(self, func, new_frame=True, editar=False):
+    def __chamada(self, func, new_frame=True, editar=False):
         """Funções de chamada:
         1 - Cadastrar | 2 - voltar | 3 - salvar | 4 - editar | 5 - excluir | 6 - limpar | 7 - Investimento
         8 - Data"""
         if new_frame:
             self.inicio_frame.destroy()
-            self.frame_Tela_Inicio()
+            self.__frame_Tela_Inicio()
 
         if func == 1:
-            self.frame_cadastro()
+            self.__frame_cadastro()
         elif func == 2:
-            self.seja_bem_vindoA()
+            self.__seja_bem_vindoA()
         elif func == 8:
             if not editar:
                 Funcs(self.inicio_frame, self.entry_data).abrir_calendario()
             else:
-                Funcs(self.new_window, self.entry_data).abrir_calendario()
+                Funcs(self.new_window, self.entry_data_edit).abrir_calendario()
         elif func == 7:
-            self.frame_investimento()
+            self.__frame_investimento()
             Funcs(self.treeview).visualizar_investimentos()
         elif func == 6:
             Funcs(
@@ -482,18 +500,18 @@ class Application:
                     self.treeview.item(id_list, "values")[0],
                     self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
                     self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
-                    self.entry_imposto_edit, self.entry_valor_final_edit
+                    self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window
                 ).salvar(update=True)
         elif func == 4:
-            self.tela_editar()
+            self.__tela_editar()
 
-    def bt_voltar(self):
+    def __bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                           borderwidth=2, highlightbackground='black', command=lambda: self.chamada(2))
+                           borderwidth=2, highlightbackground='black', command=lambda: self.__chamada(2))
 
         bt_voltar.place(x=20, y=10, relheight=0.07)
 
-    def frame_principal(self):
+    def __frame_principal(self):
         #   CRIANDO VARIAVEIS PARA FRAME PRINCIPAL
         self.options_frame = tk.Frame(self.root, bg='#02347c')
 
@@ -509,9 +527,9 @@ class Application:
                         highlightbackground='#F2F2F2')
         # |---botoes---|
         cad_btn = tk.Button(self.options_frame, text='Cadastrar', font=('KacstOffice', '10'), bg='#2fc7f4',
-                            command=lambda: self.chamada(1))
+                            command=lambda: self.__chamada(1))
         acess = tk.Button(self.options_frame, text='Investimentos', font=('KacstOffice', '10'), bg='#2fc7f4',
-                          command=lambda: self.chamada(7))
+                          command=lambda: self.__chamada(7))
 
         #   CONFIGURANDO FRAME PRINCIPAL
         # |---botoes---|
@@ -521,17 +539,17 @@ class Application:
         l_linha.place(x=0, y=70)
         title_op.place(x=45, y=20)
 
-    def frame_Tela_Inicio(self):
+    def __frame_Tela_Inicio(self):
         #   CRIANDO FRAME DE TELA DE INICIO
         self.inicio_frame = Frame(self.root, background='black')
 
         #   CONFIGURANDO FRAME
         self.inicio_frame.place(x=150, relheight=1, relwidth=1)
 
-    def seja_bem_vindoA(self, frame=False):
+    def __seja_bem_vindoA(self, frame=False):
         #   CHAMANDO FRAME DE TELA INICIAL
         if frame:
-            self.frame_Tela_Inicio()
+            self.__frame_Tela_Inicio()
         # Foto bg
         self.imagem = tk.PhotoImage(file='b3.png')
         self.imagem.subsample(1, 1)
@@ -543,7 +561,7 @@ class Application:
                              fg='#2fc7f4')
         bem_vindo.place(x=202, y=20)
 
-    def frame_cadastro(self):
+    def __frame_cadastro(self):
         # LISTA e VAR PARA OPTIONMENU
         listaOP = ['----', 'Compra', 'Venda']
         self.varCV = StringVar()
@@ -551,16 +569,16 @@ class Application:
 
         #   CRIANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
-        self.bt_voltar()
+        self.__bt_voltar()
         self.bt_limpar = Button(self.inicio_frame, text='Limpar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
-                                command=lambda: self.chamada(6, new_frame=False))
+                                command=lambda: self.__chamada(6, new_frame=False))
         self.bt_salvar = Button(self.inicio_frame, text='Salvar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
-                                command=lambda: self.chamada(3, new_frame=False))
+                                command=lambda: self.__chamada(3, new_frame=False))
         self.bt_data = Button(self.inicio_frame, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
-                              command=lambda: self.chamada(8, new_frame=False))
+                              command=lambda: self.__chamada(8, new_frame=False))
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Cadastrar Investimento", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
@@ -588,9 +606,9 @@ class Application:
         self.entry_qnt_de_papeis = Entry(self.inicio_frame, width=10)
         self.entry_valor_unitario = Entry(self.inicio_frame, width=10)
         self.entry_taxa_corretagem = Entry(self.inicio_frame, width=10)
-        self.entry_valor_da_operacao = Entry(self.inicio_frame, width=10)
-        self.entry_imposto = Entry(self.inicio_frame, width=10)
-        self.entry_valor_final = Entry(self.inicio_frame, width=10)
+        self.entry_valor_da_operacao = Entry(self.inicio_frame, width=10, state=DISABLED)
+        self.entry_imposto = Entry(self.inicio_frame, width=10, state=DISABLED)
+        self.entry_valor_final = Entry(self.inicio_frame, width=10, state=DISABLED)
 
         #   CONFIGURANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
@@ -620,17 +638,22 @@ class Application:
         op_compraVenda.place(x=25, y=180)
         op_compraVenda.configure(highlightcolor='black', borderwidth=1, highlightbackground='black')
 
-    def treeview_frame(self):
+        # |---ENTRY---|DADOS AUTOMATICOS CALCULADOS
+        ###########################################
+
+    
+
+    def __treeview_frame(self):
         #   CRIANDO FRAME PARA TREEVIEW
         self.tree_frame = Frame(self.inicio_frame, background='gray8')
 
         #   CONFIGURANDO FRAME
         self.tree_frame.place(y=80, x=10, width=580, height=312)
 
-    def frame_investimento(self):
+    def __frame_investimento(self):
         #   CRIANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
-        self.bt_voltar()
+        self.__bt_voltar()
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Seus Investimentos", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
@@ -640,7 +663,7 @@ class Application:
         lb_cadastrar_investimento.place(x=180, y=12)
 
         #   CHAMANDO FRAME TREEVIEW
-        self.treeview_frame()
+        self.__treeview_frame()
 
         #   CRIANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
@@ -650,7 +673,7 @@ class Application:
                                  borderwidth=2, highlightbackground='black')
         self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
-                                command=lambda: self.chamada(4, new_frame=False))
+                                command=lambda: self.__chamada(4, new_frame=False))
         # |---TREEVIEW---|
         self.treeview = ttk.Treeview(self.tree_frame, height=3)
         # |---SCROLLBAR---|
@@ -694,7 +717,7 @@ class Application:
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
 
-    def nova_tela(self, width, height, locateY=2, locateX=2):
+    def __nova_tela(self, width, height, locateY=2, locateX=2):
         # CHAMA UMA NOVA JANELA PARA EDIÇÃO DE DADOS
         self.new_window = NovaJanela()
 
@@ -713,7 +736,7 @@ class Application:
         self.new_window.resizable(False, False)
         self.new_window.configure(background='Black')
 
-    def tela_editar(self):
+    def __tela_editar(self):
         # usar para selecionar na lista da treeview
         # verifica se tem um item selecionado
         if not self.treeview.selection() == ():
@@ -725,7 +748,7 @@ class Application:
             listaOP = ['----', 'Compra', 'Venda']
             self.editar_varCV = StringVar()
 
-            self.nova_tela(350, 450, locateX=4, locateY=2)
+            self.__nova_tela(350, 450, locateX=4, locateY=2)
 
             # CONFIGURANDO
             # |---Labels---|
@@ -745,14 +768,14 @@ class Application:
             lbl_compra_venda = Label(self.new_window, text='Tipo Operação', bg='black', fg='white')
             # |---Bottuns---|
             btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c',
-                                  fg='white',borderwidth=2, highlightbackground='black',
+                                  fg='white', borderwidth=2, highlightbackground='black',
                                   command=lambda: self.new_window.destroy())
             btn_salvar = Button(self.new_window, text='Salvar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
-                                command=lambda: self.chamada(3, editar=True, new_frame=False))
+                                command=lambda: self.__chamada(3, new_frame=False, editar=True))
             btn_data = Button(self.new_window, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
-                              command=lambda: self.chamada(8, new_frame=False))
+                              command=lambda: self.__chamada(8, new_frame=False, editar=True))
             # |---OPTIONMENU---|
             op_compraVenda = OptionMenu(self.new_window, self.editar_varCV, *listaOP)
             # |---ENTRY---|
@@ -804,32 +827,6 @@ class Application:
             messagebox.showerror('Controle de investimentos',
                                  'SELECIONE UM ITEM PARA EDITAR')
             return False
-
-    def tela_confirmacao(self, update=False, delete=False):
-        # gera telinha no centro
-        self.nova_tela(300,100)
-
-        if update:
-            # funcoes falsas para dar o retorno que eu quero
-            def confirmar():
-                self.new_window.destroy()
-                self.new_window.destroy()
-                return True
-            # LABEL
-            lbl_alterar = Label(self.new_window, text='DESEJA ALTERAR AS \nINFORMAÇÕES DA AÇÃO EDITADA?')
-            lbl_alterar.configure(font=('KacstOffice', '10'), bg='black', fg='white')
-            lbl_alterar.pack(pady=12)
-            # BUTOES
-            btn_cancelar = Button(self.new_window, text='Cancelar', font=('KacstOffice', '10'), bg='#02347c',
-                                  fg='white', borderwidth=2, highlightbackground='black',
-                                  command=lambda: self.new_window.destroy())
-            btn_confirmar = Button(self.new_window, text='Confirmar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                borderwidth=2, highlightbackground='black',
-                                command=lambda: confirmar())
-            btn_cancelar.place(relx=0.05, rely=0.65, relheight=0.30)
-            btn_confirmar.place(relx=0.65, rely=0.65, relheight=0.30)
-            if confirmar():
-                return True
 
 
 Application().iniciar()
