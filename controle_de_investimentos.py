@@ -55,8 +55,6 @@ class BancoDeDados:
             print(interr)
             return False
 
-
-
     def introduzirDados(self, nome_tabela: str, especifico: bool, valores: str,
                         colum_especificas: str = 'Default') -> bool:
         """o parametro colum_especificas pode ser usado somente quando o parametro 'especifico' for True"""
@@ -141,7 +139,7 @@ class Funcs:
         self.get_btn_data = Button(self.frame_treeview, text='Inserir data', command=lambda: self.__por_entry())
 
         self.get_btn_data.place(x=270, y=67)
-        self.get_btn_data.configure(fg="gray75", bg="blue",font=('KacstOffice', '10', 'bold'))
+        self.get_btn_data.configure(fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'))
         self.calendario.place(x=240, y=100)
 
     def __por_entry(self):
@@ -383,7 +381,7 @@ class Funcs:
                 return True
         else:
             confirma = messagebox.askquestion('Controle de investimentos',
-                                              'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?',)
+                                              'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
             print(self.lista)
             print(self.lista[1].get())
             print(self.lista[4].get())
@@ -437,6 +435,9 @@ class Funcs:
         self.lista[7].insert(END, colum_8)
         self.lista[8].insert(END, colum_9)
 
+    def calcular(self):
+        pass
+
 
 class Application:
 
@@ -466,7 +467,7 @@ class Application:
     def __chamada(self, func, new_frame=True, editar=False):
         """Funções de chamada:
         1 - Cadastrar | 2 - voltar | 3 - salvar | 4 - editar | 5 - excluir | 6 - limpar | 7 - Investimento
-        8 - Data"""
+        8 - Data | 9 - calcular"""
         if new_frame:
             self.inicio_frame.destroy()
             self.__frame_Tela_Inicio()
@@ -504,6 +505,9 @@ class Application:
                 ).salvar(update=True)
         elif func == 4:
             self.__tela_editar()
+        elif func == 9:
+            Funcs(self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(), self.entry_valor_da_operacao.get()
+                  ).calcular()
 
     def __bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
@@ -579,6 +583,10 @@ class Application:
         self.bt_data = Button(self.inicio_frame, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
                               command=lambda: self.__chamada(8, new_frame=False))
+        self.bt_calcular = Button(self.inicio_frame, text='Calcular', font=('KacstOffice', '10'), bg='#02347c',
+                                  fg='white',
+                                  borderwidth=2, highlightbackground='black',
+                                  command=lambda: self.__chamada(9, new_frame=False))
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Cadastrar Investimento", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
@@ -606,15 +614,16 @@ class Application:
         self.entry_qnt_de_papeis = Entry(self.inicio_frame, width=10)
         self.entry_valor_unitario = Entry(self.inicio_frame, width=10)
         self.entry_taxa_corretagem = Entry(self.inicio_frame, width=10)
-        self.entry_valor_da_operacao = Entry(self.inicio_frame, width=10, state=DISABLED)
-        self.entry_imposto = Entry(self.inicio_frame, width=10, state=DISABLED)
-        self.entry_valor_final = Entry(self.inicio_frame, width=10, state=DISABLED)
+        self.entry_valor_da_operacao = Entry(self.inicio_frame, width=10)
+        self.entry_imposto = Entry(self.inicio_frame, width=10)
+        self.entry_valor_final = Entry(self.inicio_frame, width=10)
 
         #   CONFIGURANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
         self.bt_salvar.place(x=510, y=10, relheight=0.07)
         self.bt_limpar.place(x=510, y=360, relheight=0.07)
         self.bt_data.place(x=155, y=67, height=20)
+        self.bt_calcular.place(x=155, y=267, relheight=0.07)
         # |---LABEL---|
         lb_cadastrar_investimento.place(x=180, y=12)
         lb_codigo.place(x=25, y=70)
@@ -637,11 +646,6 @@ class Application:
         # |---OPTIONMENU---|
         op_compraVenda.place(x=25, y=180)
         op_compraVenda.configure(highlightcolor='black', borderwidth=1, highlightbackground='black')
-
-        # |---ENTRY---|DADOS AUTOMATICOS CALCULADOS
-        ###########################################
-
-    
 
     def __treeview_frame(self):
         #   CRIANDO FRAME PARA TREEVIEW
