@@ -142,7 +142,7 @@ class Funcs:
         self.get_btn_data = Button(self.variavel_1, text='Inserir data', command=lambda: self.__por_entry())
 
         self.get_btn_data.place(x=270, y=67)
-        self.get_btn_data.configure(fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'))
+        self.get_btn_data.configure(bg='#02347c', fg='white', font=('KacstOffice', '10', 'bold'))
         self.calendario.place(x=240, y=100)
 
     def __por_entry(self):
@@ -443,7 +443,31 @@ class Funcs:
         self.lista[8].insert(END, colum_9)
 
     def calcular(self):
-        pass
+        # verificação de erros
+        # qtn de papeis
+        try:
+            # calculo do valor da operação
+            valor_operacao = (int(self.lista[0]) * float(self.lista[1])) + float(self.lista[2])
+            # calculo do imposto
+            imposto = valor_operacao * 0.0003
+            # calculo do valor final
+            valor_final = imposto + valor_operacao
+
+            # excluindo dados das entrys
+            self.lista[3].delete(0, END)
+            self.lista[4].delete(0, END)
+            self.lista[5].delete(0, END)
+
+            # pondo dados nas entrys
+            self.lista[3].insert(END, valor_operacao)
+            self.lista[4].insert(END, imposto)
+            self.lista[5].insert(END, valor_final)
+        except ValueError as err:
+            print(err)
+            messagebox.showerror(title="Controle de investimentos", message="Impossivel calcular valores com letras. \n"
+                                                                            "Verifique os dados em 'Qnt. De Papeis',"
+                                                                            " 'Corretagem' ou 'Valor Unit.'")
+
 
     def remover(self):
         banco = BancoDeDados('Investimentos')
@@ -517,26 +541,36 @@ class Application:
                     self.entry_codigo,
                 ).salvar()
             else:
-                id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
-                Funcs(
-                    self.treeview,
-                    self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
-                    self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
-                    self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
-                    self.treeview.item(id_list, "values")[0]
-                ).salvar(update=True)
+                try:
+                    id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele
+                    # sempre será 0
+                    Funcs(
+                        self.treeview,
+                        self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
+                        self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
+                        self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
+                        self.treeview.item(id_list, "values")[0]
+                    ).salvar(update=True)
+                except:
+                    messagebox.showerror(title="ERROR", message="Não há itens para remover!")
         elif func == 4:
             self.__tela_editar()
         elif func == 9:
             Funcs(
-                self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(), self.entry_valor_da_operacao.get()
+                self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(),
+                self.entry_taxa_corretagem.get(), self.entry_valor_da_operacao,
+                self.entry_imposto, self.entry_valor_final
             ).calcular()
         elif func == 5:
-            id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
-            Funcs(
-                self.treeview, self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1],
-                0, 0
-            ).remover()
+            try:
+                id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele
+                # sempre será 0
+                Funcs(
+                    self.treeview, self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1],
+                    0, 0
+                ).remover()
+            except:
+                messagebox.showerror(title="ERROR", message="Não há itens para remover!")
 
     def __bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
