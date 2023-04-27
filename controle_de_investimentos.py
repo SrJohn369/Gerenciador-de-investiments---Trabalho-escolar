@@ -167,22 +167,22 @@ class Funcs:
         # VERIFICANDO ERROS DE INTEGRIDADE DE DADOS
         if not update:
             # garantindo que o codigo não esteja vazío ao salvar
-            if not self.lista[0].get() == '':
+            if not self.lista[9].get() == '':
                 # VERIFICA SE TEM PONTO OU VIRGULA
-                if self.lista[0].get().count(",") >= 1 or self.lista[0].get().count(".") >= 1:
+                if self.lista[9].get().count(",") >= 1 or self.lista[9].get().count(".") >= 1:
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
                                          'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
                     return False
                 # VERIFICA SE ULTRAPASSA O LIMITE DE 7 NCARACTERES
-                if len(self.lista[0].get()) > 7:
+                if len(self.lista[9].get()) > 7:
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
                                          ' no maximo.'
                                          'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
                     return False
                 try:
-                    float(self.lista[0].get())
+                    float(self.lista[9].get())
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Código" possui código inválido para B3.\nCódigos de ações possuem letras'
                                          ' e números.\n'
@@ -364,8 +364,8 @@ class Funcs:
 
         # verifica se o ativo ja existe na tabela ativo
         if not update:
-            if banco.introduzirDados('Ativos', False, f"'{self.lista[0].get()}'"):
-                banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[9].get()}'"):
+                banco.introduzirDados('Acoes', False, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
                                                       f"'{self.lista[2]}',       '{self.lista[3]}',"
                                                       f"'{self.lista[4].get()}', '{self.lista[5]}',"
                                                       f"'{self.lista[6]}',       '{self.lista[7]}',"
@@ -374,7 +374,7 @@ class Funcs:
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
-                banco.introduzirDados('Acoes', False, f"'{self.lista[0].get()}', '{self.lista[1].get()}',"
+                banco.introduzirDados('Acoes', False, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
                                                       f"'{self.lista[2]}',       '{self.lista[3]}',"
                                                       f"'{self.lista[4].get()}', '{self.lista[5]}',"
                                                       f"'{self.lista[6]}',       '{self.lista[7]}',"
@@ -397,21 +397,27 @@ class Funcs:
                         valor_da_opercao =  '{self.lista[6]}',
                         imposto =           '{self.lista[7]}',
                         valor_final =       '{self.lista[8]}'     """,
-                    f"""acao = '{self.lista[0]}'"""
+                    f"""acao = '{self.lista[10]}'"""
                 )
                 self.lista[9].destroy()
+                self.visualizar_investimentos(EDITAR=True)
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
                 print('cancealdo')
                 return False
 
-    def visualizar_investimentos(self):
+    def visualizar_investimentos(self, EDITAR=False):
         banco = BancoDeDados('Investimentos')
-
-        lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
-        for i in lista:
-            self.variavel_1.insert("", END, values=i)
+        if not EDITAR:
+            lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
+            for i in lista:
+                self.variavel_1.insert("", END, values=i)
+        else:
+            self.lista[0].delete(*self.lista[0].get_children())
+            lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
+            for i in lista:
+                self.lista[0].insert("", END, values=i)
 
     def editar(self):
         # separar os dados na lista
@@ -443,9 +449,10 @@ class Funcs:
         banco = BancoDeDados('Investimentos')
         confirma = messagebox.askquestion('Controle de investimentos',
                                           f'TEM CERTEZA QUE DESEJA REMOVER'
-                                          f' ESSA AÇÃO?\n{self.variavel_1}\t{self.variavel_2}')
+                                          f' ESSA AÇÃO?\n{self.lista[1]}\t{self.lista[2]}')
         if confirma == 'yes':
-            banco.delete('Acoes', especifico=True, arg=f"acao = '{self.variavel_1}'")
+            banco.delete('Acoes', especifico=True, arg=f"acao = '{self.lista[1]}'")
+            self.visualizar_investimentos(EDITAR=True)
             messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
 
 
@@ -500,28 +507,35 @@ class Application:
                 self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
             ).limpa_tela()
         elif func == 3:
-            if not editar:
+            if editar is False:
+                # "0 foi apenas para ocupar espaço na lista"
                 Funcs(
-                    self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario, self.varCV,
-                    self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
+                    0,
+                    self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario, self.varCV,
+                    self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto,
+                    self.entry_valor_final,
+                    self.entry_codigo,
                 ).salvar()
             else:
                 id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
                 Funcs(
-                    self.treeview.item(id_list, "values")[0],
+                    self.treeview,
                     self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
                     self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
-                    self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window
+                    self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
+                    self.treeview.item(id_list, "values")[0]
                 ).salvar(update=True)
         elif func == 4:
             self.__tela_editar()
         elif func == 9:
-            Funcs(self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(), self.entry_valor_da_operacao.get()
-                 ).calcular()
+            Funcs(
+                self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(), self.entry_valor_da_operacao.get()
+            ).calcular()
         elif func == 5:
             id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
             Funcs(
-                self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1]
+                self.treeview, self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1],
+                0, 0
             ).remover()
 
     def __bt_voltar(self):
@@ -840,7 +854,6 @@ class Application:
                   self.entry_valor_unitario_edit, (self.editar_varCV, listaOP), self.entry_taxa_corretagem_edit,
                   self.entry_valor_da_operacao_edit, self.entry_imposto_edit, self.entry_valor_final_edit,
                   self.new_window).editar()
-            self.new_window.mainloop()
             return True
 
         else:
