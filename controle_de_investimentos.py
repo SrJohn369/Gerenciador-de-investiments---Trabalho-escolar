@@ -87,7 +87,7 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def delete(self, tabela: str, especifico=False) -> bool:
+    def delete(self, tabela: str, especifico=False, arg='Default') -> bool:
         if not especifico:
             try:
                 self.cursor.execute(f"""DROP TABLE {tabela};""")
@@ -98,7 +98,7 @@ class BancoDeDados:
                 return False
         else:
             try:
-                self.cursor.execute(f"""DROP TABLE {tabela};""")
+                self.cursor.execute(f"""DELETE FROM {tabela} WHERE {arg};""")
                 self.banco.commit()
                 return True
             except sqlite3.OperationalError as err:
@@ -122,21 +122,24 @@ class Funcs:
     def __init__(self, *args):
         """indices: 0 ← Frame/treview | 1 ← get.Entry | 2 ← get.Variável | 3+ ← Lista (Não serão considerados Frame, Entry e
          nem a Variavel apenas a lista Lista) """
-        self.frame_treeview = self.entry = self.variavel = None
+        self.variavel_1 = self.variavel_2 = self.variavel_3 = None
         self.lista = []
         if len(args) == 1:
-            self.frame_treeview = args[0]
+            self.variavel_1 = args[0]
         elif len(args) == 2:
-            self.entry = args[1]
+            self.variavel_1 = args[0]
+            self.variavel_2 = args[1]
         elif len(args) == 3:
-            self.variavel = args[2]
+            self.variavel_1 = args[0]
+            self.variavel_2 = args[1]
+            self.variavel_3 = args[2]
         elif len(args) >= 4:
             self.lista = list(args)
 
     def abrir_calendario(self) -> None:
-        self.calendario = Calendar(self.frame_treeview, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
+        self.calendario = Calendar(self.variavel_1, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
                                    locale='pt_br')
-        self.get_btn_data = Button(self.frame_treeview, text='Inserir data', command=lambda: self.__por_entry())
+        self.get_btn_data = Button(self.variavel_1, text='Inserir data', command=lambda: self.__por_entry())
 
         self.get_btn_data.place(x=270, y=67)
         self.get_btn_data.configure(fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'))
@@ -145,8 +148,8 @@ class Funcs:
     def __por_entry(self):
         get_date = self.calendario.get_date()
         self.calendario.destroy()
-        self.entry.delete(0, END)
-        self.entry.insert(END, get_date)
+        self.variavel_2.delete(0, END)
+        self.variavel_2.insert(END, get_date)
         self.get_btn_data.destroy()
 
     def limpa_tela(self):
@@ -382,9 +385,7 @@ class Funcs:
         else:
             confirma = messagebox.askquestion('Controle de investimentos',
                                               'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
-            print(self.lista)
-            print(self.lista[1].get())
-            print(self.lista[4].get())
+
             if confirma == 'yes':
                 banco.atualizarTabela(
                     'Acoes',
@@ -410,7 +411,7 @@ class Funcs:
 
         lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
         for i in lista:
-            self.frame_treeview.insert("", END, values=i)
+            self.variavel_1.insert("", END, values=i)
 
     def editar(self):
         # separar os dados na lista
@@ -423,7 +424,7 @@ class Funcs:
         for i, item in enumerate(itens):
             if item == colum_5:
                 optiomenu = i
-        # por os dados nas entry para editar
+        # por os dados nas entrys para editar
         self.lista[1].insert(END, colum_2)
         self.lista[2].insert(END, colum_3)
         self.lista[3].insert(END, colum_4)
@@ -437,6 +438,15 @@ class Funcs:
 
     def calcular(self):
         pass
+
+    def remover(self):
+        banco = BancoDeDados('Investimentos')
+        confirma = messagebox.askquestion('Controle de investimentos',
+                                          f'TEM CERTEZA QUE DESEJA REMOVER'
+                                          f' ESSA AÇÃO?\n{self.variavel_1}\t{self.variavel_2}')
+        if confirma == 'yes':
+            banco.delete('Acoes', especifico=True, arg=f"acao = '{self.variavel_1}'")
+            messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
 
 
 class Application:
@@ -507,7 +517,12 @@ class Application:
             self.__tela_editar()
         elif func == 9:
             Funcs(self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(), self.entry_valor_da_operacao.get()
-                  ).calcular()
+                 ).calcular()
+        elif func == 5:
+            id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
+            Funcs(
+                self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1]
+            ).remover()
 
     def __bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
@@ -674,7 +689,8 @@ class Application:
         self.bt_filtro = Button(self.tree_frame, text='Filtrar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black')
         self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                 borderwidth=2, highlightbackground='black')
+                                 borderwidth=2, highlightbackground='black',
+                                 command=lambda: self.__chamada(5, new_frame=False))
         self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
                                 command=lambda: self.__chamada(4, new_frame=False))
