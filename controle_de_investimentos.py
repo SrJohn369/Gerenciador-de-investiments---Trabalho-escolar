@@ -156,8 +156,11 @@ class Funcs:
         self.lista[0].delete(0, END)
         self.lista[1].delete(0, END)
         self.lista[2].delete(0, END)
+        self.lista[2].insert(0, '0')
         self.lista[3].delete(0, END)
+        self.lista[3].insert(0, '0.0')
         self.lista[4].delete(0, END)
+        self.lista[4].insert(0, '0.0')
         self.lista[5].delete(0, END)
         self.lista[6].delete(0, END)
         self.lista[7].delete(0, END)
@@ -229,71 +232,6 @@ class Funcs:
         if self.lista[4].get() == '----':
             messagebox.showerror('Controle de investimentos',
                                  'O campo "Tipo Operação" não possui uma opção de compra ou venda!')
-            return False
-
-        # garantindo que em QNT. DE PAPEIS os valores numéricos sejam numéricos
-        if not self.lista[2].get() == '':
-            # testa de é possivel converter para INTEIRO
-            try:
-                self.lista[2] = self.lista[2].get()
-                self.lista[2] = self.lista[2].replace(",", ".")
-                if self.lista[2].count(",") >= 1 or self.lista[2].count(".") >= 1:
-                    messagebox.showerror('Controle de investimentos',
-                                         'O campo "Qnt. De Papeis" só aceita valores numéricos INTEIROS '
-                                         'sem ponto flutuante, por exemplo:\n145\t(Cento e quarenta e cinco)')
-                    return False
-                int(self.lista[2])
-            except ValueError as err:
-                print(err)
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Qnt. De Papeis" só aceita valores numéricos!')
-                return False
-        else:
-            messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
-            return False
-
-        # garantindo que em VALOR UNIT. os valores numéricos sejam numéricos
-        if not self.lista[3].get() == '':
-            # testa de é possivel converter para FLOAT
-            try:
-                self.lista[3] = self.lista[3].get()
-                self.lista[3] = self.lista[3].replace(",", ".")
-                if self.lista[3].count(",") > 1 or self.lista[3].count(".") > 1:
-                    messagebox.showerror('Controle de investimentos',
-                                         'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
-                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
-                                         ' e setenta e oito centavos)')
-                    return False
-                float(self.lista[3])
-            except ValueError as err:
-                print(err)
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Valor Unit" só aceita valores numéricos!')
-                return False
-        else:
-            messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
-            return False
-
-        # garantindo que em CORRETAGEM. os valores numéricos sejam numéricos
-        if not self.lista[5].get() == '':
-            # testa de é possivel converter para FLOAT
-            try:
-                self.lista[5] = self.lista[5].get()
-                self.lista[5] = self.lista[5].replace(",", ".")
-                if self.lista[5].count(",") > 1 or self.lista[5].count(".") > 1:
-                    messagebox.showerror('Controle de investimentos',
-                                         'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
-                                         'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis reais'
-                                         ' e setenta e oito centavos)')
-                    return False
-                float(self.lista[5])
-            except ValueError as err:
-                print(err)
-                messagebox.showerror('Controle de investimentos',
-                                     'O campo "Corretagem" só aceita valores numéricos!')
-                return False
-        else:
-            messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
             return False
 
         # garantindo que em VALOR OP. os valores numéricos sejam numéricos
@@ -442,34 +380,6 @@ class Funcs:
         self.lista[7].insert(END, colum_8)
         self.lista[8].insert(END, colum_9)
 
-    def calcular(self):
-        # verificação de erros
-        # qtn de papeis
-        try:
-            self.lista[1] = self.lista[1].replace(",", ".")
-            self.lista[2] = self.lista[2].replace(",", ".")
-            # calculo do valor da operação
-            valor_operacao = (int(self.lista[0]) * float(self.lista[1])) + float(self.lista[2])
-            # calculo do imposto
-            imposto = valor_operacao * 0.0003
-            # calculo do valor final
-            valor_final = imposto + valor_operacao
-
-            # excluindo dados das entrys
-            self.lista[3].delete(0, END)
-            self.lista[4].delete(0, END)
-            self.lista[5].delete(0, END)
-
-            # pondo dados nas entrys
-            self.lista[3].insert(END, f'{valor_operacao:.2f}')
-            self.lista[4].insert(END, f'{imposto:.2f}')
-            self.lista[5].insert(END, f'{valor_final:.2f}')
-        except ValueError as err:
-            print(err)
-            messagebox.showerror(title="Controle de investimentos", message="Impossivel calcular valores com letras. \n"
-                                                                            "Verifique os dados em 'Qnt. De Papeis',"
-                                                                            " 'Corretagem' ou 'Valor Unit.'")
-
     def remover(self):
         banco = BancoDeDados('Investimentos')
         confirma = messagebox.askquestion('Controle de investimentos',
@@ -558,11 +468,7 @@ class Application:
             self.__tela_editar()
         elif func == 9:
             if not editar:
-                Funcs(
-                    self.entry_qnt_de_papeis.get(), self.entry_valor_unitario.get(),
-                    self.entry_taxa_corretagem.get(), self.entry_valor_da_operacao,
-                    self.entry_imposto, self.entry_valor_final
-                ).calcular()
+                pass
             else:
                 Funcs(
                     self.entry_qnt_de_papeis_edit.get(), self.entry_valor_unitario_edit.get(),
@@ -637,6 +543,114 @@ class Application:
         bem_vindo.place(x=202, y=20)
 
     def __frame_cadastro(self):
+        def calcular(*args):
+            lista = list(args)
+
+            # verificação de erros
+            # garantindo que em QNT. DE PAPEIS os valores numéricos sejam numéricos
+            if not lista[0].get() == '':
+                # testa de é possivel converter para INTEIRO
+                try:
+                    lista[0] = lista[0].get()
+                    lista[0] = lista[0].replace(",", ".")
+                    if lista[0].count(",") >= 1 or lista[0].count(".") >= 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Qtn. De Papeis" não pode ter ponto ou vírgula')
+                        lista[0] = 0
+                    else:
+                        lista[0] = float(lista[0])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Qnt. De Papeis" só aceita valores numéricos!')
+                    lista[0] = 0
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
+                lista[0] = 0
+
+            # garantindo que em VALOR UNIT. os valores numéricos sejam numéricos
+            if not lista[1].get() == '':
+                # testa de é possivel converter para FLOAT
+                try:
+                    lista[1] = lista[1].get()
+                    lista[1] = lista[1].replace(",", ".")
+                    if lista[1].count(",") > 1 or lista[1].count(".") > 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
+                                             'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
+                                             'reais'
+                                             ' e setenta e oito centavos)')
+                        lista[1] = 0.0
+                    else:
+                        lista[1] = float(lista[1])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Valor Unit" só aceita valores numéricos!')
+                    lista[1] = 0.0
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
+                lista[1] = 0.0
+
+            # garantindo que em CORRETAGEM. os valores numéricos sejam numéricos
+            if not lista[2].get() == '':
+                # testa de é possivel converter para FLOAT
+                try:
+                    lista[2] = lista[2].get()
+                    lista[2] = lista[2].replace(",", ".")
+                    if lista[2].count(",") > 1 or lista[2].count(".") > 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
+                                             'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
+                                             'reais'
+                                             ' e setenta e oito centavos)')
+                        lista[2] = 0.0
+                    else:
+                        lista[2] = float(lista[2])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Corretagem" só aceita valores numéricos!')
+                    lista[2] = 0.0
+
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
+                lista[2] = 0.0
+
+            print(type(lista[0]), 'inteiro')
+            print(type(lista[1]), 'float 1')
+            print(type(lista[2]), 'float 2')
+            # calculo do valor da operação
+            valor_operacao = (lista[0] * lista[1]) + lista[2]
+            # calculo do imposto
+            imposto = valor_operacao * 0.0003
+            # calculo do valor final
+            valor_final = imposto + valor_operacao
+
+            # pondo no estado norma para editar
+            lista[3].configure(state='normal')
+            lista[4].configure(state='normal')
+            lista[5].configure(state='normal')
+
+            # excluindo dados das entrys
+            lista[3].delete(0, END)
+            lista[4].delete(0, END)
+            lista[5].delete(0, END)
+
+            # pondo dados nas entrys
+            lista[3].insert(END, f'{valor_operacao:.2f}')
+            lista[4].insert(END, f'{imposto:.2f}')
+            lista[5].insert(END, f'{valor_final:.2f}')
+
+            # impedindo usuário mexa nessa parte
+            lista[3].configure(state='readonly')
+            lista[4].configure(state='readonly')
+            lista[5].configure(state='readonly')
+
+            self.inicio_frame.after(2000, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
+                                    self.entry_taxa_corretagem, self.entry_valor_da_operacao,
+                                    self.entry_imposto, self.entry_valor_final, self.inicio_frame)
+
         # LISTA e VAR PARA OPTIONMENU
         listaOP = ['----', 'Compra', 'Venda']
         self.varCV = StringVar()
@@ -654,10 +668,6 @@ class Application:
         self.bt_data = Button(self.inicio_frame, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
                               command=lambda: self.__chamada(8, new_frame=False))
-        self.bt_calcular = Button(self.inicio_frame, text='Calcular', font=('KacstOffice', '10'), bg='#02347c',
-                                  fg='white',
-                                  borderwidth=2, highlightbackground='black',
-                                  command=lambda: self.__chamada(9, new_frame=False))
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Cadastrar Investimento", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
@@ -688,13 +698,16 @@ class Application:
         self.entry_valor_da_operacao = Entry(self.inicio_frame, width=10)
         self.entry_imposto = Entry(self.inicio_frame, width=10)
         self.entry_valor_final = Entry(self.inicio_frame, width=10)
+        # |---ENTRY INSERTS INICIAIS---|
+        self.entry_qnt_de_papeis.insert(0, '0')
+        self.entry_valor_unitario.insert(0, '0.0')
+        self.entry_taxa_corretagem.insert(0, '0.0')
 
         #   CONFIGURANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
         # |---BOTÃO--|
         self.bt_salvar.place(x=510, y=10, relheight=0.07)
         self.bt_limpar.place(x=510, y=360, relheight=0.07)
         self.bt_data.place(x=155, y=67, height=20)
-        self.bt_calcular.place(x=155, y=267, relheight=0.07)
         # |---LABEL---|
         lb_cadastrar_investimento.place(x=180, y=12)
         lb_codigo.place(x=25, y=70)
@@ -717,6 +730,10 @@ class Application:
         # |---OPTIONMENU---|
         op_compraVenda.place(x=25, y=180)
         op_compraVenda.configure(highlightcolor='black', borderwidth=1, highlightbackground='black')
+        # |---FAZ O CALCULO A CADA 2s---|
+        calcular(self.entry_qnt_de_papeis, self.entry_valor_unitario,
+                 self.entry_taxa_corretagem, self.entry_valor_da_operacao,
+                 self.entry_imposto, self.entry_valor_final, self.inicio_frame)
 
     def __treeview_frame(self):
         #   CRIANDO FRAME PARA TREEVIEW
