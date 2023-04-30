@@ -13,7 +13,8 @@ class BancoDeDados:
     def __init__(self, nome_banco):
         self.__abrirBanco(nome_banco)
         self.__criarTabela('Ativos', 'Ativo VARCHAR(7) PRIMARY KEY')
-        self.__criarTabela('Acoes', 'acao                   VARCHAR(7),'
+        self.__criarTabela('Acoes', 'id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
+                                    'acao                   VARCHAR(7),'
                                     'data                   DATE,'
                                     'quantidade_papeis      SMALLINT,'
                                     'valor_unitario         NUMERIC(7,2),'
@@ -68,7 +69,7 @@ class BancoDeDados:
                                     ({valores});""")
 
             except sqlite3.OperationalError as err:
-                print(err)
+                print(err, 'erro operacional em "especifico"')
                 return False
 
         else:
@@ -78,10 +79,10 @@ class BancoDeDados:
                                     ({valores});""")
 
             except sqlite3.OperationalError as err:
-                print(err)
+                print(err, 'erro na operação de update')
                 return False
             except sqlite3.IntegrityError as interr:
-                print(interr)
+                print(interr, 'Falha de integridade')
                 return False
 
         self.banco.commit()
@@ -302,21 +303,26 @@ class Funcs:
 
         # verifica se o ativo ja existe na tabela ativo
         if not update:
+            print('Vaerificou se já existe ativo com esse nome')
             if banco.introduzirDados('Ativos', False, f"'{self.lista[9].get()}'"):
-                banco.introduzirDados('Acoes', False, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
-                                                      f"'{self.lista[2]}',       '{self.lista[3]}',"
-                                                      f"'{self.lista[4].get()}', '{self.lista[5]}',"
-                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                      f"'{self.lista[8]}'")
+                banco.introduzirDados('Acoes', True, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
+                                                     f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
+                                                     f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
+                                                     f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                     f"'{self.lista[8]}'",
+                                      "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
+                                      "corretagem,valor_da_opercao,imposto,valor_final")
                 banco.select('*', 'Acoes')
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
-                banco.introduzirDados('Acoes', False, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
-                                                      f"'{self.lista[2]}',       '{self.lista[3]}',"
-                                                      f"'{self.lista[4].get()}', '{self.lista[5]}',"
-                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                      f"'{self.lista[8]}'")
+                banco.introduzirDados('Acoes', True, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
+                                                     f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
+                                                     f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
+                                                     f"'{self.lista[6]}',       '{self.lista[7]}',"
+                                                     f"'{self.lista[8]}'",
+                                      "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
+                                      "corretagem,valor_da_opercao,imposto,valor_final")
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 banco.select('*', 'Acoes')
                 return True
@@ -328,14 +334,14 @@ class Funcs:
                 banco.atualizarTabela(
                     'Acoes',
                     f"""data =              '{self.lista[1].get()}',
-                        quantidade_papeis = '{self.lista[2]}',
-                        valor_unitario =    '{self.lista[3]}',
+                        quantidade_papeis = '{self.lista[2].get()}',
+                        valor_unitario =    '{self.lista[3].get()}',
                         tipo_de_ordem =     '{self.lista[4].get()}',
-                        corretagem =        '{self.lista[5]}',
+                        corretagem =        '{self.lista[5].get()}',
                         valor_da_opercao =  '{self.lista[6]}',
                         imposto =           '{self.lista[7]}',
                         valor_final =       '{self.lista[8]}'     """,
-                    f"""acao = '{self.lista[10]}'"""
+                    f"""id_acao = '{self.lista[10]}'"""
                 )
                 self.lista[9].destroy()
                 self.visualizar_investimentos(EDITAR=True)
@@ -361,32 +367,32 @@ class Funcs:
         # separar os dados na lista
         id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
         colum_1, colum_2, colum_3, colum_4, colum_5, colum_6, colum_7, colum_8, \
-            colum_9 = self.lista[0].item(id_list, 'values')
+            colum_9, colum_10 = self.lista[0].item(id_list, 'values')
         # separar os dados da optionmenu
         itens = self.lista[4][1]
         optiomenu = 0
         for i, item in enumerate(itens):
-            if item == colum_5:
+            if item == colum_6:
                 optiomenu = i
         # por os dados nas entrys para editar
-        self.lista[1].insert(END, colum_2)
-        self.lista[2].insert(END, colum_3)
-        self.lista[3].insert(END, colum_4)
+        self.lista[8].insert(END, colum_10) #valor total
+        self.lista[1].insert(END, colum_3) #data
+        self.lista[2].insert(END, colum_4)  #qtn papeis
         # aqui tive que guardar tupla dentro de tupla de outra
         # tupla para usar os valores e da o set() correto
         self.lista[4][0].set(self.lista[4][1][optiomenu])
-        self.lista[5].insert(END, colum_6)
-        self.lista[6].insert(END, colum_7)
-        self.lista[7].insert(END, colum_8)
-        self.lista[8].insert(END, colum_9)
+        self.lista[3].insert(END, colum_5)#valor unit
+        self.lista[5].insert(END, colum_7)# corretagem
+        self.lista[6].insert(END, colum_8)#valor op
+        self.lista[7].insert(END, colum_9)#imposto
 
     def remover(self):
         banco = BancoDeDados('Investimentos')
         confirma = messagebox.askquestion('Controle de investimentos',
                                           f'TEM CERTEZA QUE DESEJA REMOVER'
-                                          f' ESSA AÇÃO?\n{self.lista[1]}\t{self.lista[2]}')
+                                          f' ESSA AÇÃO?\n{self.lista[2]}\t{self.lista[3]}')
         if confirma == 'yes':
-            banco.delete('Acoes', especifico=True, arg=f"acao = '{self.lista[1]}'")
+            banco.delete('Acoes', especifico=True, arg=f"id_acao = '{self.lista[1]}'")
             self.visualizar_investimentos(EDITAR=True)
             messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
 
@@ -442,7 +448,7 @@ class Application:
                 self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
             ).limpa_tela()
         elif func == 3:
-            if editar is False:
+            if not editar:
                 # "0 foi apenas para ocupar espaço na lista"
                 Funcs(
                     0,
@@ -481,7 +487,7 @@ class Application:
                 # sempre será 0
                 Funcs(
                     self.treeview, self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1],
-                    0, 0
+                    self.treeview.item(id_list, "values")[2], 0
                 ).remover()
             except:
                 messagebox.showerror(title="ERROR", message="Não há itens para remover!")
@@ -617,13 +623,10 @@ class Application:
                 messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
                 lista[2] = 0.0
 
-            print(type(lista[0]), 'inteiro')
-            print(type(lista[1]), 'float 1')
-            print(type(lista[2]), 'float 2')
             # calculo do valor da operação
             valor_operacao = (lista[0] * lista[1]) + lista[2]
             # calculo do imposto
-            imposto = valor_operacao * 0.0003
+            imposto = valor_operacao * (0.0300 / 100)
             # calculo do valor final
             valor_final = imposto + valor_operacao
 
@@ -784,9 +787,10 @@ class Application:
         self.bt_editar.place(relx=0.70, rely=0.015)
         # |---TREEVIEW---|
         self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.805)
-        self.treeview["columns"] = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
+        self.treeview["columns"] = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # cabeçalho
+        self.treeview.heading('0', text='ID')
         self.treeview.heading('1', text='Cod. Ativo')
         self.treeview.heading('2', text='Data')
         self.treeview.heading('3', text='Qtd. Papéis')
@@ -797,6 +801,7 @@ class Application:
         self.treeview.heading('8', text='Imposto')
         self.treeview.heading('9', text='Valor final')
         # espaçamento das colunas
+        self.treeview.column("0", width=30, anchor='c')
         self.treeview.column("1", width=90, anchor='c')
         self.treeview.column("2", width=90, anchor='c')
         self.treeview.column("3", width=100, anchor='c')
@@ -830,6 +835,111 @@ class Application:
         self.new_window.configure(background='Black')
 
     def __tela_editar(self):
+        def calcular(*args):
+            lista = list(args)
+
+            # verificação de erros
+            # garantindo que em QNT. DE PAPEIS os valores numéricos sejam numéricos
+            if not lista[0].get() == '':
+                # testa de é possivel converter para INTEIRO
+                try:
+                    lista[0] = lista[0].get()
+                    lista[0] = lista[0].replace(",", ".")
+                    if lista[0].count(",") >= 1 or lista[0].count(".") >= 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Qtn. De Papeis" não pode ter ponto ou vírgula')
+                        lista[0] = 0
+                    else:
+                        lista[0] = float(lista[0])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Qnt. De Papeis" só aceita valores numéricos!')
+                    lista[0] = 0
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
+                lista[0] = 0
+
+            # garantindo que em VALOR UNIT. os valores numéricos sejam numéricos
+            if not lista[1].get() == '':
+                # testa de é possivel converter para FLOAT
+                try:
+                    lista[1] = lista[1].get()
+                    lista[1] = lista[1].replace(",", ".")
+                    if lista[1].count(",") > 1 or lista[1].count(".") > 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
+                                             'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
+                                             'reais'
+                                             ' e setenta e oito centavos)')
+                        lista[1] = 0.0
+                    else:
+                        lista[1] = float(lista[1])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Valor Unit" só aceita valores numéricos!')
+                    lista[1] = 0.0
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
+                lista[1] = 0.0
+
+            # garantindo que em CORRETAGEM. os valores numéricos sejam numéricos
+            if not lista[2].get() == '':
+                # testa de é possivel converter para FLOAT
+                try:
+                    lista[2] = lista[2].get()
+                    lista[2] = lista[2].replace(",", ".")
+                    if lista[2].count(",") > 1 or lista[2].count(".") > 1:
+                        messagebox.showerror('Controle de investimentos',
+                                             'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
+                                             'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
+                                             'reais'
+                                             ' e setenta e oito centavos)')
+                        lista[2] = 0.0
+                    else:
+                        lista[2] = float(lista[2])
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror('Controle de investimentos',
+                                         'O campo "Corretagem" só aceita valores numéricos!')
+                    lista[2] = 0.0
+
+            else:
+                messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
+                lista[2] = 0.0
+
+            # calculo do valor da operação
+            valor_operacao = (lista[0] * lista[1]) + lista[2]
+            # calculo do imposto
+            imposto = valor_operacao * (0.0300 / 100)
+            # calculo do valor final
+            valor_final = imposto + valor_operacao
+
+            # pondo no estado norma para editar
+            lista[3].configure(state='normal')
+            lista[4].configure(state='normal')
+            lista[5].configure(state='normal')
+
+            # excluindo dados das entrys
+            lista[3].delete(0, END)
+            lista[4].delete(0, END)
+            lista[5].delete(0, END)
+
+            # pondo dados nas entrys
+            lista[3].insert(END, f'{valor_operacao:.2f}')
+            lista[4].insert(END, f'{imposto:.2f}')
+            lista[5].insert(END, f'{valor_final:.2f}')
+
+            # impedindo usuário mexa nessa parte
+            lista[3].configure(state='readonly')
+            lista[4].configure(state='readonly')
+            lista[5].configure(state='readonly')
+
+            self.new_window.after(2000, calcular, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
+                                  self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
+                                  self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window)
+
         # usar para selecionar na lista da treeview
         # verifica se tem um item selecionado
         if not self.treeview.selection() == ():
@@ -850,7 +960,7 @@ class Application:
                               highlightbackground='#F2F2F2')
             lbl_linha_2 = Label(self.new_window, text='', width=700, height=1, anchor=NW, font=' Ivy 1 ', bg='#2fc7f4',
                                 highlightbackground='#F2F2F2')
-            lbl_ativo = Label(self.new_window, text=f'{self.treeview.item(id_list, "values")[0]}',
+            lbl_ativo = Label(self.new_window, text=f'{self.treeview.item(id_list, "values")[1]}',
                               font=('KacstOffice', '15'), bg='black', fg='white')
             lbl_Qtn_Papeis = Label(self.new_window, text='Qtn. De Papeis', bg='black', fg='white')
             lbl_valor_unit = Label(self.new_window, text='Valor Unit.', bg='black', fg='white')
@@ -869,10 +979,6 @@ class Application:
             btn_data = Button(self.new_window, text='Data', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                               borderwidth=2, highlightbackground='black',
                               command=lambda: self.__chamada(8, new_frame=False, editar=True))
-            btn_calcular = Button(self.new_window, text='Calcular', font=('KacstOffice', '10'), bg='#02347c',
-                                  fg='white',
-                                  borderwidth=2, highlightbackground='black',
-                                  command=lambda: self.__chamada(9, new_frame=False, editar=True))
             # |---OPTIONMENU---|
             op_compraVenda = OptionMenu(self.new_window, self.editar_varCV, *listaOP)
             # |---ENTRY---|
@@ -908,7 +1014,6 @@ class Application:
             btn_cancelar.place(relx=0.05, rely=0.9, relheight=0.07)
             btn_salvar.place(relx=0.75, rely=0.9, relheight=0.07)
             btn_data.place(relx=0.30, rely=0.75, relheight=0.07)
-            btn_calcular.place(relx=0.65, rely=0.40, relheight=0.07)
             # |---OPTIONMENU position---|
             op_compraVenda.pack(anchor='center')
             op_compraVenda.configure(highlightcolor='black', borderwidth=1, highlightbackground='black')
@@ -918,7 +1023,10 @@ class Application:
                   self.entry_valor_unitario_edit, (self.editar_varCV, listaOP), self.entry_taxa_corretagem_edit,
                   self.entry_valor_da_operacao_edit, self.entry_imposto_edit, self.entry_valor_final_edit,
                   self.new_window).editar()
-            return True
+
+            calcular(self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
+                     self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
+                     self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window)
 
         else:
             messagebox.showerror('Controle de investimentos',
