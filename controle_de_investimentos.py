@@ -163,14 +163,26 @@ class Funcs:
         elif len(args) >= 4:
             self.lista = list(args)
 
-    def abrir_calendario(self) -> None:
-        self.calendario = Calendar(self.variavel_1, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
-                                   locale='pt_br')
-        self.get_btn_data = Button(self.variavel_1, text='Inserir data', command=lambda: self.__por_entry())
+    def abrir_calendario(self, EDITAR=False) -> None:
+        if EDITAR:
+            self.calendario = Calendar(self.variavel_1, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
+                                       locale='pt_br')
+            self.get_btn_data = Button(self.variavel_1, text='Inserir data', command=lambda: self.__por_entry(),
+                                       relief='solid')
 
-        self.get_btn_data.place(x=270, y=67)
-        self.get_btn_data.configure(bg='#02347c', fg='white', font=('KacstOffice', '10', 'bold'))
-        self.calendario.place(x=240, y=100)
+            self.get_btn_data.place(relx=0.08, rely=0.5, relwidth=0.845)
+            self.get_btn_data.configure(bg='#02347c', fg='white', font=('KacstOffice', '10', 'bold'))
+            self.calendario.place(relx=0.08, rely=0.57)
+
+        else:
+            self.calendario = Calendar(self.variavel_1, fg="gray75", bg="blue", font=('KacstOffice', '10', 'bold'),
+                                       locale='pt_br')
+            self.get_btn_data = Button(self.variavel_1, text='Inserir data', command=lambda: self.__por_entry(),
+                                       relief='solid')
+
+            self.get_btn_data.place(relx=0.21, rely=0.195, relwidth=0.395)
+            self.get_btn_data.configure(bg='#02347c', fg='white', font=('KacstOffice', '10', 'bold'))
+            self.calendario.place(relx=0.21, rely=0.27)
 
     def __por_entry(self):
         get_date = self.calendario.get_date()  # vai me retornar uma data no formato YYYY/MM/DD
@@ -376,7 +388,7 @@ class Funcs:
                     f"""id_acao = '{self.lista[10]}'"""
                 )
                 self.lista[9].destroy()
-                self.visualizar_investimentos(EDITAR=True)
+                self.visualizar_investimentos('',EDITAR=True)
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
@@ -489,7 +501,7 @@ class Application:
             if not editar:
                 Funcs(self.inicio_frame, self.entry_data).abrir_calendario()
             else:
-                Funcs(self.new_window, self.entry_data_edit).abrir_calendario()
+                Funcs(self.new_window, self.entry_data_edit).abrir_calendario(EDITAR=True)
         elif func == 7:
             self.__frame_investimento()
             Funcs(self.treeview).visualizar_investimentos('')
@@ -519,7 +531,11 @@ class Application:
                         self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
                         self.treeview.item(id_list, "values")[0]
                     ).salvar(update=True)
-                except:
+                except ValueError as err:
+                    print(err)
+                    messagebox.showerror(title="ERROR", message="Não há itens para remover!")
+                except TypeError as err:
+                    print(err)
                     messagebox.showerror(title="ERROR", message="Não há itens para remover!")
         elif func == 4:
             self.__tela_editar()
@@ -540,8 +556,15 @@ class Application:
                     self.treeview, self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1],
                     self.treeview.item(id_list, "values")[2], 0
                 ).remover()
-            except:
-                messagebox.showerror(title="ERROR", message="Não há itens para remover!")
+            except TypeError as err:
+                print(err)
+                messagebox.showerror(title="ERROR", message="Selecione um item para remover")
+            except IndexError as err:
+                print(err)
+                messagebox.showerror(title="ERROR", message="Selecione um item para remover")
+            except ValueError as err:
+                print(err)
+                messagebox.showerror(title="ERROR", message="Selecione um item para remover")
 
     def __bt_voltar(self):
         bt_voltar = Button(self.inicio_frame, text='Voltar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
@@ -672,6 +695,10 @@ class Application:
                         lista[2].insert(END, "0.0")
                         lista[2] = float(lista[2].get().replace(",", "."))
                     else:
+                        if lista[2].get().count(",") == 1:
+                            val_formatado = lista[2].get().replace(",", ".")
+                            lista[2].delete(0, END)
+                            lista[2].insert(END, val_formatado)
                         lista[2] = float(lista[2].get().replace(",", "."))
                 except ValueError as err:
                     print(err)
@@ -680,7 +707,6 @@ class Application:
                     lista[2].delete(0, END)
                     lista[2].insert(END, "0.0")
                     lista[2] = float(lista[2].get().replace(",", "."))
-
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
                 lista[2] = 0.0
@@ -847,10 +873,27 @@ class Application:
                 # se retornar uma lista vazia
                 if not validar:
                     messagebox.showerror(title='Controle de investimentos', message='Esse ativo não existe'
-                                                                                    ' mais na base dados')
+                                                                                    ' mais na base dados. '
+                                                                                    'A lista foi atualizada')
+                    combobox()
             else:
                 funcao.visualizar_investimentos('')
 
+        def combobox():
+            # variavel para ComboBox
+            self.lista = ['TODOS']
+            # acrescenta valores à lista da Base de Dados
+            banco = BancoDeDados('Investimentos')
+            lista_ativos = banco.select("*", "Ativos")
+            print("\t\t\tLISTA DE ATIVOS\n", lista_ativos)
+            print()
+            for ativo in lista_ativos:
+                self.lista.append(ativo[0])
+            self.filtrando = ttk.Combobox(self.tree_frame, values=self.lista,
+                                          background='gray8', justify='center')
+            self.filtrando.place(relx=0.1, rely=0.035)
+            self.filtrando.configure(width=8)
+            self.filtrando.bind("<<ComboboxSelected>>", on_selected)
         #   CRIANDO BOTOES e LABELS frame inicio_frame
         # |---BOTÃO--|
         self.__bt_voltar()
@@ -866,20 +909,8 @@ class Application:
         lb_cadastrar_investimento.place(x=180, y=12)
         lbl_filtro.place(relx=0.015, rely=0.035)
 
-        # variavel para OptionMenu
-        lista = ['TODOS']
-        # acrescenta valores à lista da Base de Dados
-        banco = BancoDeDados('Investimentos')
-        lista_ativos = banco.select("*", "Ativos")
-        print("\t\t\tLISTA DE ATIVOS\n", lista_ativos)
-        print()
-        for ativo in lista_ativos:
-            lista.append(ativo[0])
-
-        #   CRIANDO BOTOES, TREEVIEW e OptionMenu
+        #   CRIANDO BOTOES, TREEVIEW e ComboBox
         # |---BOTÃO--|
-        self.filtrando = ttk.Combobox(self.tree_frame, values=lista,
-                                      background='gray8', justify='center')
         self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                  borderwidth=2, highlightbackground='black',
                                  command=lambda: self.__chamada(5, new_frame=False))
@@ -888,6 +919,8 @@ class Application:
                                 command=lambda: self.__chamada(4, new_frame=False))
         # |---TREEVIEW---|
         self.treeview = ttk.Treeview(self.tree_frame, height=3)
+        # |---COMBOBOX---|
+        combobox()
         # |---SCROLLBAR---|
         #   se não defininir o command na Scrollbar e não configurar a qauntidade de colunas na treeview a barra de
         #   rolagem provavelmente não funcionará
@@ -898,9 +931,6 @@ class Application:
 
         #   CONFIGURANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
-        self.filtrando.place(relx=0.1, rely=0.035)
-        self.filtrando.configure(width=8)
-        self.filtrando.bind("<<ComboboxSelected>>", on_selected)
         self.bt_remover.place(relx=0.83, rely=0.015)
         self.bt_editar.place(relx=0.70, rely=0.015)
         # |---TREEVIEW---|
@@ -981,19 +1011,22 @@ class Application:
             if not lista[0].get() == '':
                 # testa de é possivel converter para INTEIRO
                 try:
-                    lista[0] = lista[0].get()
-                    lista[0] = lista[0].replace(",", ".")
-                    if lista[0].count(",") >= 1 or lista[0].count(".") >= 1:
+                    if lista[0].get().count(",") >= 1 or lista[0].get().count(".") >= 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Qtn. De Papeis" não pode ter ponto ou vírgula')
-                        lista[0] = 0
+                        lista[0].delete(0, END)
+                        lista[0].insert(END, "0")
+                        lista[0] = int(lista[0].get())
                     else:
-                        lista[0] = float(lista[0])
+                        # testando erro para garantir apenas valores numericos
+                        lista[0] = int(lista[0].get())
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Qnt. De Papeis" só aceita valores numéricos!')
-                    lista[0] = 0
+                    lista[0].delete(0, END)
+                    lista[0].insert(END, "0")
+                    lista[0] = int(lista[0].get())
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
                 lista[0] = 0
@@ -1002,22 +1035,28 @@ class Application:
             if not lista[1].get() == '':
                 # testa de é possivel converter para FLOAT
                 try:
-                    lista[1] = lista[1].get()
-                    lista[1] = lista[1].replace(",", ".")
-                    if lista[1].count(",") > 1 or lista[1].count(".") > 1:
+                    if lista[1].get().count(",") > 1 or lista[1].get().count(".") > 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
                                              'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
                                              'reais'
                                              ' e setenta e oito centavos)')
-                        lista[1] = 0.0
+                        lista[1].delete(0, END)
+                        lista[1].insert(END, "0.0")
+                        lista[1] = float(lista[1].get().replace(",", "."))
                     else:
-                        lista[1] = float(lista[1])
+                        if lista[1].get().count(",") == 1:
+                            val_formatado = lista[1].get().replace(",", ".")
+                            lista[1].delete(0, END)
+                            lista[1].insert(END, val_formatado)
+                        lista[1] = float(lista[1].get().replace(",", "."))
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Valor Unit" só aceita valores numéricos!')
-                    lista[1] = 0.0
+                    lista[1].delete(0, END)
+                    lista[1].insert(END, "0.0")
+                    lista[1] = float(lista[1].get().replace(",", "."))
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
                 lista[1] = 0.0
@@ -1026,23 +1065,28 @@ class Application:
             if not lista[2].get() == '':
                 # testa de é possivel converter para FLOAT
                 try:
-                    lista[2] = lista[2].get()
-                    lista[2] = lista[2].replace(",", ".")
-                    if lista[2].count(",") > 1 or lista[2].count(".") > 1:
+                    if lista[2].get().count(",") > 1 or lista[2].get().count(".") > 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
                                              'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
                                              'reais'
                                              ' e setenta e oito centavos)')
-                        lista[2] = 0.0
+                        lista[2].delete(0, END)
+                        lista[2].insert(END, "0.0")
+                        lista[2] = float(lista[2].get().replace(",", "."))
                     else:
-                        lista[2] = float(lista[2])
+                        if lista[2].get().count(",") == 1:
+                            val_formatado = lista[2].get().replace(",", ".")
+                            lista[2].delete(0, END)
+                            lista[2].insert(END, val_formatado)
+                        lista[2] = float(lista[2].get().replace(",", "."))
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Corretagem" só aceita valores numéricos!')
-                    lista[2] = 0.0
-
+                    lista[2].delete(0, END)
+                    lista[2].insert(END, "0.0")
+                    lista[2] = float(lista[2].get().replace(",", "."))
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
                 lista[2] = 0.0
