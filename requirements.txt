@@ -41,7 +41,6 @@ paramiko==2.9.3
 pexpect==4.8.0
 Pillow==9.0.1
 protobuf==3.12.4
-psycopg2==2.9.6
 ptyprocess==0.7.0
 pycairo==1.20.1
 pycups==2.0.1
@@ -62,7 +61,6 @@ requests==2.25.1
 SecretStorage==3.3.1
 six==1.16.0
 systemd-python==234
-tk==0.1.0
 tkcalendar==1.6.1
 ubuntu-advantage-tools==8001
 ubuntu-drivers-common==0.0.0
