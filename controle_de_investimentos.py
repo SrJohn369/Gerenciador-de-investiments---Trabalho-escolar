@@ -6,7 +6,6 @@ import tkinter as tk
 from tkcalendar import Calendar, DateEntry
 from datetime import date
 from tkinter import Toplevel as NovaJanela
-from time import sleep
 
 
 class BancoDeDados:
@@ -88,7 +87,7 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def delete(self, tabela: str, especifico=False, arg='Default') -> bool:
+    def delete(self, tabela: str, especifico=False, arg:str='') -> bool:
         if not especifico:
             try:
                 self.cursor.execute(f"""DROP TABLE {tabela};""")
@@ -106,12 +105,39 @@ class BancoDeDados:
                 print(err)
                 return False
 
-    def select(self, select: str, from1: str, order_by=False, coluna='default', ordem='ASC'):
-        if not order_by:
-            for row in self.cursor.execute(f"SELECT {select} FROM {from1}"):
-                print(row)
+    def select(self, select: str, from1: str, join: str = '', on: str = '', where: str = '', onde=False,
+               associacao=False, order_by=False, coluna='default', ordem='ASC'):
+        if order_by:
+            if onde:
+                lista = []
+                print("OXII")
+                for dado in self.cursor.execute(f"SELECT {select} FROM {from1}"
+                                                f" WHERE {where} ORDER BY {coluna} {ordem}"):
+                    lista.append(dado)
+                print(lista)
+                return lista
+            lista = []
+            for dado in self.cursor.execute(f"SELECT {select} FROM {from1} ORDER BY {coluna} {ordem}"):
+                lista.append(dado)
+            return lista
+        if associacao:
+            if onde:
+                lista = []
+                for dado in self.cursor.execute(f"SELECT {select} FROM {from1} INNER JOIN {join} ON {on} "
+                                                f"WHERE {where}"):
+                    lista.append(dado)
+                print("\t\t\tLISTA ASSOCIADA\n", lista)
+                return lista
+            lista = []
+            for dado in self.cursor.execute(f"SELECT {select} FROM {from1} INNER JOIN {join} ON {on}"):
+                lista.append(dado)
+            print("\t\t\tLISTA ASSOCIADA\n", lista)
+            return lista
         else:
-            lista = self.cursor.execute(f"SELECT {select} FROM {from1} ORDER BY {coluna} {ordem}")
+            lista = []
+            for dado in self.cursor.execute(f"SELECT {select} FROM {from1}"):
+                lista.append(dado)
+            print("\t\t\tLISTA NÃO ORDENADA\n", lista)
             return lista
 
 
@@ -147,7 +173,11 @@ class Funcs:
         self.calendario.place(x=240, y=100)
 
     def __por_entry(self):
-        get_date = self.calendario.get_date()
+        get_date = self.calendario.get_date()  # vai me retornar uma data no formato YYYY/MM/DD
+        ano = get_date[6:10]
+        mes = get_date[3:5]
+        dia = get_date[0:2]
+        get_date = f'{ano}-{mes}-{dia}'
         self.calendario.destroy()
         self.variavel_2.delete(0, END)
         self.variavel_2.insert(END, get_date)
@@ -202,27 +232,27 @@ class Funcs:
         if not self.lista[1].get() == '':
             # garantindo que é uma data válida
             try:
-                int(self.lista[1].get()[6:10])
-                int(self.lista[1].get()[3:5])
-                int(self.lista[1].get()[0:2])
+                int(self.lista[1].get()[0:4])
+                int(self.lista[1].get()[5:7])
+                int(self.lista[1].get()[8:10])
             except ValueError as err:
                 print(err)
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
 
             # garantindo que a data não ultrapasse a data atual
-            if int(self.lista[1].get()[6:10]) > self.__ano:
+            if int(self.lista[1].get()[0:4]) > self.__ano:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
 
             # garantindo que a data não ultrapasse a data atual
-            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) > self.__mes:
+            elif int(self.lista[1].get()[0:4]) == self.__ano and int(self.lista[1].get()[5:7]) > self.__mes:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
 
             # garantindo que a data não ultrapasse a data atual
-            elif int(self.lista[1].get()[6:10]) == self.__ano and int(self.lista[1].get()[3:5]) == self.__mes and \
-                    int(self.lista[1].get()[0:2]) > self.__dia:
+            elif int(self.lista[1].get()[0:4]) == self.__ano and int(self.lista[1].get()[5:7]) == self.__mes and \
+                    int(self.lista[1].get()[8:10]) > self.__dia:
                 messagebox.showerror('Controle de investimentos', 'O campo "Data" possui uma data invalida!')
                 return False
         else:
@@ -351,17 +381,30 @@ class Funcs:
                 print('cancealdo')
                 return False
 
-    def visualizar_investimentos(self, EDITAR=False):
+    def visualizar_investimentos(self, evento: any, EDITAR=False, ativo=False) -> bool:
         banco = BancoDeDados('Investimentos')
-        if not EDITAR:
-            lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
-            for i in lista:
-                self.variavel_1.insert("", END, values=i)
-        else:
+        if EDITAR:
             self.lista[0].delete(*self.lista[0].get_children())
-            lista = banco.select('*', 'Acoes', True, 'Acao', ordem='DESC')
+            lista = banco.select('*', 'Acoes', order_by=True, coluna='acao', ordem='DESC')
             for i in lista:
                 self.lista[0].insert("", END, values=i)
+        else:
+            if ativo:
+                self.variavel_1.delete(*self.variavel_1.get_children())
+                lista = banco.select('*', 'Acoes', where=f"acao = '{evento}'",
+                                     order_by=True, onde=True, coluna='acao', ordem='DESC')
+                if not lista:
+                    return False
+                else:
+                    for i, dado in enumerate(lista):
+                        self.variavel_1.insert("", END, values=dado)
+                    return True
+            else:
+                self.variavel_1.delete(*self.variavel_1.get_children())
+                lista = banco.select('*', 'Acoes', order_by=True, coluna='acao', ordem='DESC')
+                print(len(lista))
+                for i, dados in enumerate(lista):
+                    self.variavel_1.insert("", END, values=dados)
 
     def editar(self):
         # separar os dados na lista
@@ -375,16 +418,16 @@ class Funcs:
             if item == colum_6:
                 optiomenu = i
         # por os dados nas entrys para editar
-        self.lista[8].insert(END, colum_10) #valor total
-        self.lista[1].insert(END, colum_3) #data
-        self.lista[2].insert(END, colum_4)  #qtn papeis
+        self.lista[8].insert(END, colum_10)  # valor total
+        self.lista[1].insert(END, colum_3)  # data
+        self.lista[2].insert(END, colum_4)  # qtn papeis
         # aqui tive que guardar tupla dentro de tupla de outra
         # tupla para usar os valores e da o set() correto
         self.lista[4][0].set(self.lista[4][1][optiomenu])
-        self.lista[3].insert(END, colum_5)#valor unit
-        self.lista[5].insert(END, colum_7)# corretagem
-        self.lista[6].insert(END, colum_8)#valor op
-        self.lista[7].insert(END, colum_9)#imposto
+        self.lista[3].insert(END, colum_5)  # valor unit
+        self.lista[5].insert(END, colum_7)  # corretagem
+        self.lista[6].insert(END, colum_8)  # valor op
+        self.lista[7].insert(END, colum_9)  # imposto
 
     def remover(self):
         banco = BancoDeDados('Investimentos')
@@ -393,8 +436,14 @@ class Funcs:
                                           f' ESSA AÇÃO?\n{self.lista[2]}\t{self.lista[3]}')
         if confirma == 'yes':
             banco.delete('Acoes', especifico=True, arg=f"id_acao = '{self.lista[1]}'")
-            self.visualizar_investimentos(EDITAR=True)
+            # deleta o ativo tambem caso não exista mais ordens
+            lista = banco.select(select="Ativos.Ativo, Acoes.acao", from1="Ativos", join="Acoes", on="Ativo = acao",
+                                 where=f"acao = '{self.lista[2]}'", onde=True, associacao=True)
+            if not lista:
+                banco.delete(tabela="Ativos", especifico=True, arg=f"Ativo = '{self.lista[2]}'")
+            self.visualizar_investimentos('',EDITAR=True)
             messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
+            return True
 
 
 class Application:
@@ -441,7 +490,7 @@ class Application:
                 Funcs(self.new_window, self.entry_data_edit).abrir_calendario()
         elif func == 7:
             self.__frame_investimento()
-            Funcs(self.treeview).visualizar_investimentos()
+            Funcs(self.treeview).visualizar_investimentos('')
         elif func == 6:
             Funcs(
                 self.entry_codigo, self.entry_data, self.entry_qnt_de_papeis, self.entry_valor_unitario,
@@ -746,24 +795,79 @@ class Application:
         self.tree_frame.place(y=80, x=10, width=580, height=312)
 
     def __frame_investimento(self):
-        #   CRIANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
+        def filtar(coluna, concatena, numeric=False):
+
+            # Obtendo o estado atual de classificação da coluna
+            current_state = self.estado_atual[coluna]
+
+            # Classificando os dados de acordo com a ordem atual
+            items = [(self.treeview.set(k, coluna), k) for k in self.treeview.get_children('')]
+            if numeric:
+                # se for numerico vamos converter
+                items = [(float(item[0]), item[1]) for item in items]
+            items.sort(reverse=current_state[0])
+
+            # Atualizando o estado de classificação da coluna
+            new_state = (not current_state[0],)
+            self.estado_atual[coluna] = new_state
+
+            # Atualizando a exibição em árvore com os dados classificados
+            for index, (val, k) in enumerate(items):
+                self.treeview.move(k, '', index)  # .move() vai mover o item para cima ou para baixo na coluna
+
+                # Atualizando o ícone do cabeçalho da coluna
+                if not current_state[0]:
+                    self.treeview.heading(coluna, text=concatena + '↑')  # ascendente
+                else:
+                    self.treeview.heading(coluna, text=concatena + '↓')  # descendente
+
+            # fazendo as outras colunas voltarem ao titulo normal
+            for col in self.treeview['columns']:
+                if col != coluna:
+                    self.treeview.heading(col, text=col)
+
+        def on_selected(event):
+            funcao = Funcs(self.treeview)
+            if self.filtrando.get() != 'TODOS':
+                validar = funcao.visualizar_investimentos(self.filtrando.get(), ativo=True)
+                print(validar)
+                # se retornar uma lista vazia
+                if not validar:
+                    messagebox.showerror(title='Controle de investimentos', message='Esse ativo não existe'
+                                                                                    ' mais na base dados')
+            else:
+                funcao.visualizar_investimentos('')
+
+        #   CRIANDO BOTOES e LABELS frame inicio_frame
         # |---BOTÃO--|
         self.__bt_voltar()
         # |---LABEL---|
         lb_cadastrar_investimento = Label(self.inicio_frame, text="Seus Investimentos", font=('KacstOffice', '15'),
                                           bg='black', fg='#2fc7f4')
 
-        #   CONFIGURANDO BOTOES, LABELS, ENTRYS e OPTIONSMENU
-        # |---LABEL---|
-        lb_cadastrar_investimento.place(x=180, y=12)
-
         #   CHAMANDO FRAME TREEVIEW
         self.__treeview_frame()
 
-        #   CRIANDO BOTOES e TREEVIEW
+        lbl_filtro = Label(self.tree_frame, text='Filtro', background='gray8', foreground='white')
+        # |---LABEL---|
+        lb_cadastrar_investimento.place(x=180, y=12)
+        lbl_filtro.place(relx=0.015, rely=0.035)
+
+
+        # variavel para OptionMenu
+        lista = ['TODOS']
+        # acrescenta valores à lista da Base de Dados
+        banco = BancoDeDados('Investimentos')
+        lista_ativos = banco.select("*", "Ativos", order_by=True, coluna="Ativo")
+        print("\t\t\tLISTA DE ATIVOS\n", lista_ativos)
+        print()
+        for ativo in lista_ativos:
+            lista.append(ativo)
+
+        #   CRIANDO BOTOES, TREEVIEW e OptionMenu
         # |---BOTÃO--|
-        self.bt_filtro = Button(self.tree_frame, text='Filtrar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
-                                borderwidth=2, highlightbackground='black')
+        self.filtrando = ttk.Combobox(self.tree_frame, values=lista,
+                                      background='gray8', justify='center')
         self.bt_remover = Button(self.tree_frame, text='Remover', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                  borderwidth=2, highlightbackground='black',
                                  command=lambda: self.__chamada(5, new_frame=False))
@@ -782,35 +886,57 @@ class Application:
 
         #   CONFIGURANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
-        self.bt_filtro.place(relx=0.015, rely=0.015)
+        self.filtrando.place(relx=0.1, rely=0.035)
+        self.filtrando.configure(width=8)
+        self.filtrando.bind("<<ComboboxSelected>>", on_selected)
         self.bt_remover.place(relx=0.83, rely=0.015)
         self.bt_editar.place(relx=0.70, rely=0.015)
         # |---TREEVIEW---|
         self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.805)
-        self.treeview["columns"] = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+        self.treeview["columns"] = ("ID", "Cod. Ativo",
+                                    "Data", "Qtd. Papéis",
+                                    "Valor Unitário", "Compra/Venda",
+                                    "Corretagem", "Valor da Operação",
+                                    "Imposto", "Valor final")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
+        # usado para ajudar na lógica do filtro
+        self.estado_atual = {'ID': (False,), 'Cod. Ativo': (False,),
+                             'Data': (False,), 'Qtd. Papéis': (False,),
+                             'Valor Unitário': (False,), 'Compra/Venda': (False,),
+                             'Corretagem': (False,), 'Valor da Operação': (False,),
+                             'Imposto': (False,), 'Valor final': (False,)}
         # cabeçalho
-        self.treeview.heading('0', text='ID')
-        self.treeview.heading('1', text='Cod. Ativo')
-        self.treeview.heading('2', text='Data')
-        self.treeview.heading('3', text='Qtd. Papéis')
-        self.treeview.heading('4', text='Valor Unitário')
-        self.treeview.heading('5', text='Compra/Venda')
-        self.treeview.heading('6', text='Corretagem')
-        self.treeview.heading('7', text='Valor da Operação')
-        self.treeview.heading('8', text='Imposto')
-        self.treeview.heading('9', text='Valor final')
+        self.treeview.heading('ID', text='ID',
+                              command=lambda: filtar('ID', 'ID', numeric=True, ))
+        self.treeview.heading('Cod. Ativo', text='Cod. Ativo',
+                              command=lambda: filtar('Cod. Ativo', 'Cod. Ativo'))
+        self.treeview.heading('Data', text='Data',
+                              command=lambda: filtar('Data', 'Data'))
+        self.treeview.heading('Qtd. Papéis', text='Qtd. Papéis',
+                              command=lambda: filtar('Qtd. Papéis', 'Qtd. Papéis', numeric=True))
+        self.treeview.heading('Valor Unitário', text='Valor Unitário',
+                              command=lambda: filtar('Valor Unitário', 'Valor Unitário', numeric=True))
+        self.treeview.heading('Compra/Venda', text='Compra/Venda',
+                              command=lambda: filtar('Compra/Venda', 'Compra/Venda', numeric=True))
+        self.treeview.heading('Corretagem', text='Corretagem',
+                              command=lambda: filtar('Corretagem', 'Corretagem', numeric=True))
+        self.treeview.heading('Valor da Operação', text='Valor da Operação',
+                              command=lambda: filtar('Valor da Operação', 'Valor da Operação', numeric=True))
+        self.treeview.heading('Imposto', text='Imposto',
+                              command=lambda: filtar('Imposto', 'Imposto', numeric=True))
+        self.treeview.heading('Valor final', text='Valor final',
+                              command=lambda: filtar('Valor final', 'Valor final', numeric=True))
         # espaçamento das colunas
-        self.treeview.column("0", width=30, anchor='c')
-        self.treeview.column("1", width=90, anchor='c')
-        self.treeview.column("2", width=90, anchor='c')
-        self.treeview.column("3", width=100, anchor='c')
-        self.treeview.column("4", width=120, anchor='c')
-        self.treeview.column("5", width=120, anchor='c')
-        self.treeview.column("6", width=120, anchor='c')
-        self.treeview.column("7", width=180, anchor='c')
-        self.treeview.column("8", width=90, anchor='c')
-        self.treeview.column("9", width=120, anchor='c')
+        self.treeview.column("ID", width=30, anchor='c', minwidth=30)
+        self.treeview.column("Cod. Ativo", width=90, anchor='c',minwidth=90)
+        self.treeview.column("Data", width=90, anchor='c',minwidth=90)
+        self.treeview.column("Qtd. Papéis", width=100, anchor='c',minwidth=100)
+        self.treeview.column("Valor Unitário", width=120, anchor='c', minwidth=120)
+        self.treeview.column("Compra/Venda", width=120, anchor='c', minwidth=120)
+        self.treeview.column("Corretagem", width=120, anchor='c', minwidth=120)
+        self.treeview.column("Valor da Operação", width=180, anchor='c',minwidth=180)
+        self.treeview.column("Imposto", width=90, anchor='c', minwidth=90)
+        self.treeview.column("Valor final", width=120, anchor='c',minwidth=120)
         # |---CROLLBAR---|
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
