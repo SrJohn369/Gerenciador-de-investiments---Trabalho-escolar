@@ -191,8 +191,10 @@ class Funcs:
         dia = get_date[0:2]
         get_date = f'{ano}-{mes}-{dia}'
         self.calendario.destroy()
+        self.variavel_2.configure(state='normal')
         self.variavel_2.delete(0, END)
         self.variavel_2.insert(END, get_date)
+        self.variavel_2.configure(state='readonly')
         self.get_btn_data.destroy()
 
     def limpa_tela(self):
@@ -742,6 +744,10 @@ class Application:
                                     self.entry_taxa_corretagem, self.entry_valor_da_operacao,
                                     self.entry_imposto, self.entry_valor_final, self.inicio_frame)
 
+        self.image = PhotoImage(file="rsz_b3_logo_white(menor).png")
+        self.imagem_fundo = Label(self.inicio_frame, image=self.image, background='black')
+        self.imagem_fundo.place(relx=0.25, rely=0.55)
+
         # LISTA e VAR PARA OPTIONMENU
         listaOP = ['----', 'Compra', 'Venda']
         self.varCV = StringVar()
@@ -782,7 +788,7 @@ class Application:
         op_compraVenda = OptionMenu(self.inicio_frame, self.varCV, *listaOP)
         # |---ENTRY---|
         self.entry_codigo = Entry(self.inicio_frame, width=10)
-        self.entry_data = Entry(self.inicio_frame, width=10)
+        self.entry_data = Entry(self.inicio_frame, width=10, state='readonly')
         self.entry_qnt_de_papeis = Entry(self.inicio_frame, width=10)
         self.entry_valor_unitario = Entry(self.inicio_frame, width=10)
         self.entry_taxa_corretagem = Entry(self.inicio_frame, width=10)
@@ -894,6 +900,10 @@ class Application:
             self.filtrando.place(relx=0.1, rely=0.035)
             self.filtrando.configure(width=8)
             self.filtrando.bind("<<ComboboxSelected>>", on_selected)
+
+        self.image = PhotoImage(file="rsz_1b3_logo_white.png")
+        self.imagem_fundo = Label(self.inicio_frame, image=self.image, background='black')
+        self.imagem_fundo.place(relx=0.55, rely=0.01, relwidth=0.25, relheight=0.17)
         #   CRIANDO BOTOES e LABELS frame inicio_frame
         # |---BOTÃO--|
         self.__bt_voltar()
@@ -1164,7 +1174,7 @@ class Application:
             # |---OPTIONMENU---|
             op_compraVenda = OptionMenu(self.new_window, self.editar_varCV, *listaOP)
             # |---ENTRY---|
-            self.entry_data_edit = Entry(self.new_window, width=10)
+            self.entry_data_edit = Entry(self.new_window, width=10, state='readonly')
             self.entry_qnt_de_papeis_edit = Entry(self.new_window, width=10)
             self.entry_valor_unitario_edit = Entry(self.new_window, width=10)
             self.entry_taxa_corretagem_edit = Entry(self.new_window, width=10)
