@@ -1,11 +1,11 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-import sqlite3
+from tkinter import Toplevel as NovaJanela
 import tkinter as tk
 from tkcalendar import Calendar, DateEntry
 from datetime import date
-from tkinter import Toplevel as NovaJanela
+import sqlite3
 
 
 class BancoDeDados:
@@ -208,15 +208,17 @@ class Funcs:
                                          'O campo "Código" só aceita valores de caracteres sem ponto flutuante, '
                                          'por exemplo:\n\tPETR4\n\tALPA4\n\tABEV3')
                     return False
+                # Aqui remove todos os espaços em branco no inicio e no fim
+                self.lista[9] = self.lista[9].get().strip()
                 # VERIFICA SE ULTRAPASSA O LIMITE DE 7 NCARACTERES
-                if len(self.lista[9].get()) > 7:
+                if len(self.lista[9]) > 7:
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Código" possui código inválido para B3 que possui apenas 7 caracteres'
                                          ' no maximo.'
                                          'Por exemplo:\n\tTAEE11(6)\n\tSANB11(6)\n\tKLBN11(6)')
                     return False
                 try:
-                    float(self.lista[9].get())
+                    float(self.lista[9])
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Código" possui código inválido para B3.\nCódigos de ações possuem letras'
                                          ' e números.\n'
@@ -334,8 +336,8 @@ class Funcs:
         # verifica se o ativo ja existe na tabela ativo
         if not update:
             print('Vaerificou se já existe ativo com esse nome')
-            if banco.introduzirDados('Ativos', False, f"'{self.lista[9].get()}'"):
-                banco.introduzirDados('Acoes', True, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}'"):
+                banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
@@ -346,7 +348,7 @@ class Funcs:
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
-                banco.introduzirDados('Acoes', True, f"'{self.lista[9].get()}', '{self.lista[1].get()}',"
+                banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
@@ -853,16 +855,15 @@ class Application:
         lb_cadastrar_investimento.place(x=180, y=12)
         lbl_filtro.place(relx=0.015, rely=0.035)
 
-
         # variavel para OptionMenu
         lista = ['TODOS']
         # acrescenta valores à lista da Base de Dados
         banco = BancoDeDados('Investimentos')
-        lista_ativos = banco.select("*", "Ativos", order_by=True, coluna="Ativo")
+        lista_ativos = banco.select("*", "Ativos")
         print("\t\t\tLISTA DE ATIVOS\n", lista_ativos)
         print()
         for ativo in lista_ativos:
-            lista.append(ativo)
+            lista.append(ativo[0])
 
         #   CRIANDO BOTOES, TREEVIEW e OptionMenu
         # |---BOTÃO--|
