@@ -608,19 +608,22 @@ class Application:
             if not lista[0].get() == '':
                 # testa de é possivel converter para INTEIRO
                 try:
-                    lista[0] = lista[0].get()
-                    lista[0] = lista[0].replace(",", ".")
-                    if lista[0].count(",") >= 1 or lista[0].count(".") >= 1:
+                    if lista[0].get().count(",") >= 1 or lista[0].get().count(".") >= 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Qtn. De Papeis" não pode ter ponto ou vírgula')
-                        lista[0] = 0
+                        lista[0].delete(0, END)
+                        lista[0].insert(END, "0")
+                        lista[0] = int(lista[0].get())
                     else:
-                        lista[0] = float(lista[0])
+                        # testando erro para garantir apenas valores numericos
+                        lista[0] = int(lista[0].get())
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Qnt. De Papeis" só aceita valores numéricos!')
-                    lista[0] = 0
+                    lista[0].delete(0, END)
+                    lista[0].insert(END, "0")
+                    lista[0] = int(lista[0].get())
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Qtn. De Papeis", não pode estar vazío!')
                 lista[0] = 0
@@ -629,22 +632,28 @@ class Application:
             if not lista[1].get() == '':
                 # testa de é possivel converter para FLOAT
                 try:
-                    lista[1] = lista[1].get()
-                    lista[1] = lista[1].replace(",", ".")
-                    if lista[1].count(",") > 1 or lista[1].count(".") > 1:
+                    if lista[1].get().count(",") > 1 or lista[1].get().count(".") > 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Valor Unit." só aceita valores numéricos com apenas um ponto '
                                              'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
                                              'reais'
                                              ' e setenta e oito centavos)')
-                        lista[1] = 0.0
+                        lista[1].delete(0, END)
+                        lista[1].insert(END, "0.0")
+                        lista[1] = float(lista[1].get().replace(",", "."))
                     else:
-                        lista[1] = float(lista[1])
+                        if lista[1].get().count(",") == 1:
+                            val_formatado = lista[1].get().replace(",", ".")
+                            lista[1].delete(0, END)
+                            lista[1].insert(END, val_formatado)
+                        lista[1] = float(lista[1].get().replace(",", "."))
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Valor Unit" só aceita valores numéricos!')
-                    lista[1] = 0.0
+                    lista[1].delete(0, END)
+                    lista[1].insert(END, "0.0")
+                    lista[1] = float(lista[1].get().replace(",", "."))
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Valor Unit.", não pode estar vazío!')
                 lista[1] = 0.0
@@ -653,22 +662,24 @@ class Application:
             if not lista[2].get() == '':
                 # testa de é possivel converter para FLOAT
                 try:
-                    lista[2] = lista[2].get()
-                    lista[2] = lista[2].replace(",", ".")
-                    if lista[2].count(",") > 1 or lista[2].count(".") > 1:
+                    if lista[2].get().count(",") > 1 or lista[2].get().count(".") > 1:
                         messagebox.showerror('Controle de investimentos',
                                              'O campo "Corretagem." só aceita valores numéricos com apenas um ponto '
                                              'decimal, por exemplo:\n1456.78\t(mil quatrocentos e cinquenta e seis '
                                              'reais'
                                              ' e setenta e oito centavos)')
-                        lista[2] = 0.0
+                        lista[2].delete(0, END)
+                        lista[2].insert(END, "0.0")
+                        lista[2] = float(lista[2].get().replace(",", "."))
                     else:
-                        lista[2] = float(lista[2])
+                        lista[2] = float(lista[2].get().replace(",", "."))
                 except ValueError as err:
                     print(err)
                     messagebox.showerror('Controle de investimentos',
                                          'O campo "Corretagem" só aceita valores numéricos!')
-                    lista[2] = 0.0
+                    lista[2].delete(0, END)
+                    lista[2].insert(END, "0.0")
+                    lista[2] = float(lista[2].get().replace(",", "."))
 
             else:
                 messagebox.showerror('Controle de investimentos', 'O campo "Corretagem", não pode estar vazío!')
@@ -701,7 +712,7 @@ class Application:
             lista[4].configure(state='readonly')
             lista[5].configure(state='readonly')
 
-            self.inicio_frame.after(2000, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
+            self.inicio_frame.after(2500, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
                                     self.entry_taxa_corretagem, self.entry_valor_da_operacao,
                                     self.entry_imposto, self.entry_valor_final, self.inicio_frame)
 
@@ -918,7 +929,7 @@ class Application:
         self.treeview.heading('Valor Unitário', text='Valor Unitário',
                               command=lambda: filtar('Valor Unitário', 'Valor Unitário', numeric=True))
         self.treeview.heading('Compra/Venda', text='Compra/Venda',
-                              command=lambda: filtar('Compra/Venda', 'Compra/Venda', numeric=True))
+                              command=lambda: filtar('Compra/Venda', 'Compra/Venda'))
         self.treeview.heading('Corretagem', text='Corretagem',
                               command=lambda: filtar('Corretagem', 'Corretagem', numeric=True))
         self.treeview.heading('Valor da Operação', text='Valor da Operação',
