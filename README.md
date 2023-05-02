@@ -7,7 +7,7 @@ Andressa Felix - Dev(Criadora da interface - front-end)
 
 Carla Lima - Dev(Criadora das funcões lógicas do programa - back-end)
 
-Maria Eduarda - Dev(Criadora do banco de dados - back-end)
+Maria Eduarda Amarante - Dev(Criadora do banco de dados - back-end)
 
 
 
