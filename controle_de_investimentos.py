@@ -435,7 +435,9 @@ class Funcs:
                 optiomenu = i
         # por os dados nas entrys para editar
         self.lista[8].insert(END, colum_10)  # valor total
+        self.lista[1].configure(state='normal')
         self.lista[1].insert(END, colum_3)  # data
+        self.lista[1].configure(state='readonly')
         self.lista[2].insert(END, colum_4)  # qtn papeis
         # aqui tive que guardar tupla dentro de tupla de outra
         # tupla para usar os valores e da o set() correto
