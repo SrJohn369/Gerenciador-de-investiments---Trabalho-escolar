@@ -10,6 +10,7 @@ import sqlite3
 
 class BancoDeDados:
     def __init__(self, nome_banco):
+        # __init__ vai iniciar as funções assim que a classe for chamada
         self.__abrirBanco(nome_banco)
         self.__criarTabela('Ativos', 'Ativo VARCHAR(7) PRIMARY KEY')
         self.__criarTabela('Acoes', 'id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
@@ -25,20 +26,23 @@ class BancoDeDados:
                                     'FOREIGN KEY (acao)'
                                     '   REFERENCES Ativos(Ativo)')
 
+    # Pelo SQLite abrir o banco também significa criar banco caso não exista
     def __abrirBanco(self, nomeBanco):
         self.banco = sqlite3.connect(f'{nomeBanco}.db')
+        # cria um curso para executar os códigos SQL
         self.cursor = self.banco.cursor()
 
     def __criarTabela(self, nomeTabela: str, colunasEDados: str) -> bool:
 
         try:
+            # vai testar e verificar se há um erro de sintaxe
             self.cursor.execute(f"""CREATE TABLE IF NOT EXISTS {nomeTabela} 
                                 ({colunasEDados});""")
-        except sqlite3.OperationalError as err:
+        except sqlite3.OperationalError as err:  # O erro é dado por esse raise sqlite3.OperationalError
             print(err)
             return False
 
-        self.banco.commit()
+        self.banco.commit()  # É todo código em SQL tem que ser dado commit para validar os dados
         return True
 
     def atualizarTabela(self, nomeTabela: str, set: str, where: str):
@@ -52,6 +56,7 @@ class BancoDeDados:
             print(err)
             return False
         except sqlite3.IntegrityError as interr:
+            # esse raise verifica erros de integridade de dados sqlite3.IntegrityError
             print(interr)
             return False
 
@@ -199,7 +204,9 @@ class Funcs:
 
     def limpa_tela(self):
         self.lista[0].delete(0, END)
+        self.lista[1].configure(state='normal')
         self.lista[1].delete(0, END)
+        self.lista[1].configure(state='readonly')
         self.lista[2].delete(0, END)
         self.lista[2].insert(0, '0')
         self.lista[3].delete(0, END)
