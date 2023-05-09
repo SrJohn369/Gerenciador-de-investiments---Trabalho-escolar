@@ -12,7 +12,8 @@ class BancoDeDados:
     def __init__(self, nome_banco):
         # __init__ vai iniciar as funções assim que a classe for chamada
         self.__abrirBanco(nome_banco)
-        self.__criarTabela('Ativos', 'Ativo VARCHAR(7) PRIMARY KEY')
+        self.__criarTabela('Ativos', 'Ativo         VARCHAR(7) PRIMARY KEY,'
+                                     'preco_medio   REAL')
         self.__criarTabela('Acoes', 'id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
                                     'acao                   VARCHAR(7),'
                                     'data                   DATE,'
@@ -92,7 +93,7 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def delete(self, tabela: str, especifico=False, arg:str='') -> bool:
+    def delete(self, tabela: str, especifico=False, arg: str = '') -> bool:
         if not especifico:
             try:
                 self.cursor.execute(f"""DROP TABLE {tabela};""")
@@ -357,7 +358,7 @@ class Funcs:
         # verifica se o ativo ja existe na tabela ativo
         if not update:
             print('Vaerificou se já existe ativo com esse nome')
-            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}'"):
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}','{34}'"):  # é o calculo do preco_medio
                 banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
@@ -369,6 +370,7 @@ class Funcs:
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
+                banco.atualizarTabela('Ativos', f"'{34}'", f"'{self.lista[9]}'")
                 banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
@@ -384,6 +386,7 @@ class Funcs:
                                               'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
 
             if confirma == 'yes':
+                banco.atualizarTabela("Ativos", f"{34}", f"{self.lista[11]}")
                 banco.atualizarTabela(
                     'Acoes',
                     f"""data =              '{self.lista[1].get()}',
@@ -397,7 +400,7 @@ class Funcs:
                     f"""id_acao = '{self.lista[10]}'"""
                 )
                 self.lista[9].destroy()
-                self.visualizar_investimentos('',EDITAR=True)
+                self.visualizar_investimentos('', EDITAR=True)
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 return True
             else:
@@ -466,7 +469,7 @@ class Funcs:
                                  where=f"acao = '{self.lista[2]}'", onde=True, associacao=True)
             if not lista:
                 banco.delete(tabela="Ativos", especifico=True, arg=f"Ativo = '{self.lista[2]}'")
-            self.visualizar_investimentos('',EDITAR=True)
+            self.visualizar_investimentos('', EDITAR=True)
             messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
             return True
 
@@ -540,7 +543,7 @@ class Application:
                         self.entry_data_edit, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
                         self.editar_varCV, self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
                         self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
-                        self.treeview.item(id_list, "values")[0]
+                        self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1]
                     ).salvar(update=True)
                 except ValueError as err:
                     print(err)
@@ -998,15 +1001,15 @@ class Application:
                               command=lambda: filtar('Valor final', 'Valor final', numeric=True))
         # espaçamento das colunas
         self.treeview.column("ID", width=30, anchor='c', minwidth=30)
-        self.treeview.column("Cod. Ativo", width=90, anchor='c',minwidth=90)
-        self.treeview.column("Data", width=90, anchor='c',minwidth=90)
-        self.treeview.column("Qtd. Papéis", width=100, anchor='c',minwidth=100)
+        self.treeview.column("Cod. Ativo", width=90, anchor='c', minwidth=90)
+        self.treeview.column("Data", width=90, anchor='c', minwidth=90)
+        self.treeview.column("Qtd. Papéis", width=100, anchor='c', minwidth=100)
         self.treeview.column("Valor Unitário", width=120, anchor='c', minwidth=120)
         self.treeview.column("Compra/Venda", width=120, anchor='c', minwidth=120)
         self.treeview.column("Corretagem", width=120, anchor='c', minwidth=120)
-        self.treeview.column("Valor da Operação", width=180, anchor='c',minwidth=180)
+        self.treeview.column("Valor da Operação", width=180, anchor='c', minwidth=180)
         self.treeview.column("Imposto", width=90, anchor='c', minwidth=90)
-        self.treeview.column("Valor final", width=120, anchor='c',minwidth=120)
+        self.treeview.column("Valor final", width=120, anchor='c', minwidth=120)
         # |---CROLLBAR---|
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
