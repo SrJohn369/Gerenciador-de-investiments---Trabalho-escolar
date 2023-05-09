@@ -487,7 +487,7 @@ class Application:
         #   CONFIGURANDO JANELA
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         self.root.title('Plataforma de Investimentos')
-        self.root.resizable(True, True)
+        self.root.resizable(False, False)
 
         #   FUNÇÕES DE INÍCIO
         self.__frame_principal()
@@ -616,21 +616,22 @@ class Application:
         self.inicio_frame = Frame(self.root, background='black')
 
         #   CONFIGURANDO FRAME
-        self.inicio_frame.place(relx=0.2, relheight=1, relwidth=0.80)
+        self.inicio_frame.place(x=150, relheight=1, relwidth=1)
 
     def __seja_bem_vindoA(self, frame=False):
         #   CHAMANDO FRAME DE TELA INICIAL
         if frame:
             self.__frame_Tela_Inicio()
         # Foto bg
-        self.imagem = tk.PhotoImage(file='B3_logo_white.png')
-        self.imagem_fundo = Label(self.inicio_frame, image=self.imagem, background='black')
-        self.imagem_fundo.place(relx=0.155, rely=0.30, relwidth=0.8, relheight=0.5)
+        self.imagem = tk.PhotoImage(file='b3.png')
+        self.imagem.subsample(1, 1)
+        self.imagem_fundo = Label(self.inicio_frame, image=self.imagem)
+        self.imagem_fundo.place(x=180, y=140, relwidth=0.333, relheight=0.28)
 
         # label
         bem_vindo = tk.Label(self.inicio_frame, text='SEJA BEM-VINDO(A)', font=('KacstOffice', '15'), bg='black',
                              fg='#2fc7f4')
-        bem_vindo.pack(pady=12)
+        bem_vindo.place(x=202, y=20)
 
     def __frame_cadastro(self):
         def calcular(*args):
@@ -757,7 +758,7 @@ class Application:
             lista[4].configure(state='readonly')
             lista[5].configure(state='readonly')
 
-            self.inicio_frame.after(1000, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
+            self.inicio_frame.after(2500, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
                                     self.entry_taxa_corretagem, self.entry_valor_da_operacao,
                                     self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV)
 
@@ -1123,7 +1124,7 @@ class Application:
                 # calculo do valor da operação
                 valor_operacao = (lista[0] * lista[1]) + lista[2]
                 # calculo do imposto
-                imposto = valor_operacao * (0.0300 / 100)
+                imposto = valor_operacao * (0.0315 / 100)
                 # calculo do valor final
                 valor_final = imposto + valor_operacao
             elif lista[7].get() == 'Venda':
@@ -1154,7 +1155,7 @@ class Application:
             lista[4].configure(state='readonly')
             lista[5].configure(state='readonly')
 
-            self.new_window.after(2000, calcular, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
+            self.new_window.after(1500, calcular, self.entry_qnt_de_papeis_edit, self.entry_valor_unitario_edit,
                                   self.entry_taxa_corretagem_edit, self.entry_valor_da_operacao_edit,
                                   self.entry_imposto_edit, self.entry_valor_final_edit, self.new_window,
                                   self.editar_varCV)
