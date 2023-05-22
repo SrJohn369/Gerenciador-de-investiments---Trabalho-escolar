@@ -12,20 +12,24 @@ class BancoDeDados:
     def __init__(self, nome_banco):
         # __init__ vai iniciar as funções assim que a classe for chamada
         self.__abrirBanco(nome_banco)
-        self.__criarTabela('Ativos', 'Ativo         VARCHAR(7) PRIMARY KEY,'
-                                     'preco_medio   REAL')
-        self.__criarTabela('Acoes', 'id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
-                                    'acao                   VARCHAR(7),'
-                                    'data                   DATE,'
-                                    'quantidade_papeis      SMALLINT,'
-                                    'valor_unitario         NUMERIC(7,2),'
-                                    'tipo_de_ordem          VARCHAR(7),'
-                                    'corretagem             NUMERIC(5,2),'
-                                    'valor_da_opercao       NUMERIC(7,2),'
-                                    'imposto                NUMERIC(6,2),'
-                                    'valor_final            NUMERIC(7,2),'
-                                    'FOREIGN KEY (acao)'
-                                    '   REFERENCES Ativos(Ativo)')
+        self.__criarTabela(nomeTabela='Ativos', colunasEDados='Ativo         VARCHAR(7) PRIMARY KEY,'
+                                                              'preco_medio   REAL,'
+                                                              'lucro         REAL')
+        self.__criarTabela(nomeTabela='Acoes',
+                           colunasEDados='id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
+                                         'acao                   VARCHAR(7),'
+                                         'data                   DATE,'
+                                         'quantidade_papeis      SMALLINT,'
+                                         'valor_unitario         NUMERIC(7,2),'
+                                         'tipo_de_ordem          VARCHAR(7),'
+                                         'corretagem             NUMERIC(5,2),'
+                                         'valor_da_opercao       NUMERIC(7,2),'
+                                         'imposto                NUMERIC(6,2),'
+                                         'valor_final            NUMERIC(7,2),'
+                                         'preco_medio            REAL,'
+                                         'lucro                  REAL,'
+                                         'FOREIGN KEY (acao)'
+                                         '   REFERENCES Ativos(Ativo)')
 
     # Pelo SQLite abrir o banco também significa criar banco caso não exista
     def __abrirBanco(self, nomeBanco):
@@ -43,7 +47,7 @@ class BancoDeDados:
             print(err)
             return False
 
-        self.banco.commit()  # É todo código em SQL tem que ser dado commit para validar os dados
+        self.banco.commit()  # todos códigos em SQL tem que ser dado commit para validar os dado
         return True
 
     def atualizarTabela(self, nomeTabela: str, set: str, where: str):
@@ -57,7 +61,7 @@ class BancoDeDados:
             print(err)
             return False
         except sqlite3.IntegrityError as interr:
-            # esse raise verifica erros de integridade de dados sqlite3.IntegrityError
+            # esse raise verifica erros de integridade de dado sqlite3.IntegrityError
             print(interr)
             return False
 
@@ -93,7 +97,7 @@ class BancoDeDados:
         self.banco.commit()
         return True
 
-    def delete(self, tabela: str, especifico=False, arg: str = '') -> bool:
+    def delete(self, tabela: str, especifico=False, where: str = '') -> bool:
         if not especifico:
             try:
                 self.cursor.execute(f"""DROP TABLE {tabela};""")
@@ -104,19 +108,19 @@ class BancoDeDados:
                 return False
         else:
             try:
-                self.cursor.execute(f"""DELETE FROM {tabela} WHERE {arg};""")
+                self.cursor.execute(f"""DELETE FROM {tabela} WHERE {where};""")
                 self.banco.commit()
                 return True
             except sqlite3.OperationalError as err:
                 print(err)
                 return False
 
-    def select(self, select: str, from1: str, join: str = '', on: str = '', where: str = '', onde=False,
-               associacao=False, order_by=False, coluna='default', ordem='ASC'):
+    def select(self, select: str, from1: str, join: str = '', on: str = '', where: str = '', where_a=False,
+               where_ob=False, where_c=False, associacao=False, order_by=False, coluna='default', ordem='ASC'):
         if order_by:
-            if onde:
+            if where_ob:
                 lista = []
-                print("OXII")
+                print("ORDER BY")
                 for dado in self.cursor.execute(f"SELECT {select} FROM {from1}"
                                                 f" WHERE {where} ORDER BY {coluna} {ordem}"):
                     lista.append(dado)
@@ -127,7 +131,7 @@ class BancoDeDados:
                 lista.append(dado)
             return lista
         if associacao:
-            if onde:
+            if where_a:
                 lista = []
                 for dado in self.cursor.execute(f"SELECT {select} FROM {from1} INNER JOIN {join} ON {on} "
                                                 f"WHERE {where}"):
@@ -138,6 +142,12 @@ class BancoDeDados:
             for dado in self.cursor.execute(f"SELECT {select} FROM {from1} INNER JOIN {join} ON {on}"):
                 lista.append(dado)
             print("\t\t\tLISTA ASSOCIADA\n", lista)
+            return lista
+        if where_c:
+            lista = []
+            for dado in self.cursor.execute(f"SELECT {select} FROM {from1} WHERE {where}"):
+                lista.append(dado)
+            print("\t\t\tSELECÃO DE UM ITEM\n", lista)
             return lista
         else:
             lista = []
@@ -358,29 +368,90 @@ class Funcs:
         # verifica se o ativo ja existe na tabela ativo
         if not update:
             print('Vaerificou se já existe ativo com esse nome')
-            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}','{34}'"):  # é o calculo do preco_medio
+            # não existir
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}','{34}', '{32}'"):
                 banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                     f"'{self.lista[8]}'",
+                                                     f"'{self.lista[8]}', 'running',"
+                                                     f"'running'",
                                       "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
-                                      "corretagem,valor_da_opercao,imposto,valor_final")
+                                      "corretagem,valor_da_opercao,imposto,valor_final, preco_medio, lucro")
+                # atualiza a tabela de ativos
+                banco.atualizarTabela(nomeTabela='Ativos',
+                                      set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}'",
+                                      where=f"Ativo='{self.lista[9]}'")
+                # atualiza tabela de acoes
+                if self.lista[4].get() == 'Compra':
+                    # captura o id gerado
+                    cap_id = banco.select(select='id_acao', from1='Acoes', where=f"acao='{self.lista[9]}'",
+                                          where_c=True)
+                    ult_id = max(cap_id)
+                    print(ult_id, '= id')
+                    # atualiza a tabela de ações
+                    banco.atualizarTabela(nomeTabela='Acoes',
+                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='-'",
+                                          where=f"id_acao={ult_id[0]} AND tipo_de_ordem='Compra'")
+                # diagnostico
                 banco.select('*', 'Acoes')
+                banco.select('*', 'Ativos')
+                # info para o usuario
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+
                 return True
+            # se existir
             else:
-                banco.atualizarTabela('Ativos', f"'{34}'", f"'{self.lista[9]}'")
                 banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                     f"'{self.lista[8]}'",
+                                                     f"'{self.lista[8]}', 'running',"
+                                                     f"'running'",
                                       "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
-                                      "corretagem,valor_da_opercao,imposto,valor_final")
+                                      "corretagem,valor_da_opercao,imposto,valor_final, preco_medio, lucro")
+
+                # atualiza a tabela de ativos
+                banco.atualizarTabela(nomeTabela='Ativos',
+                                      set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}'",
+                                      where=f"Ativo='{self.lista[9]}'")
+
+                # atualiza tabela de acoes
+                if self.lista[4].get() == 'Compra':
+                    # captura o id gerado
+                    cap_id = banco.select(select='id_acao', from1='Acoes',
+                                          where=f"acao='{self.lista[9]}'  AND tipo_de_ordem='Compra'",
+                                          where_c=True)
+                    ult_id = max(cap_id)
+                    print(ult_id, '= id')
+                    # atualiza a tabela de ações
+                    banco.atualizarTabela(nomeTabela='Acoes',
+                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='-'",
+                                          where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Compra'")
+                elif self.lista[4].get() == 'Venda':
+                    # captura o id gerado
+                    cap_id = banco.select(select='id_acao', from1='Acoes',
+                                          where=f"acao='{self.lista[9]}' AND tipo_de_ordem='Venda'",
+                                          where_c=True)
+                    ult_id = max(cap_id)
+                    print(ult_id, '= id')
+                    # atualiza a tabela de ações
+                    banco.atualizarTabela(nomeTabela='Acoes',
+                                          set=f"preco_medio='-', lucro='{Funcs.lucro(self.lista[9])[0]}'",
+                                          where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Venda'")
+                    _ ,restam, preco_medio, valor_restante = Funcs.lucro(self.lista[9])
+                    # atualiza a tabela de Ativos
+                    banco.atualizarTabela(nomeTabela='Ativos',
+                                          set=f"lucro='{Funcs.lucro(self.lista[9])[0]}'",
+                                          where=f"Ativo='{self.lista[9]}'")
+                # info para o usuario
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
+                # diagnostico
                 banco.select('*', 'Acoes')
+                banco.select('*', 'Ativos')
+
                 return True
+        # se for uma atulaização um UPDATE
         else:
             confirma = messagebox.askquestion('Controle de investimentos',
                                               'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
@@ -418,7 +489,7 @@ class Funcs:
             if ativo:
                 self.variavel_1.delete(*self.variavel_1.get_children())
                 lista = banco.select('*', 'Acoes', where=f"acao = '{evento}'",
-                                     order_by=True, onde=True, coluna='acao', ordem='DESC')
+                                     order_by=True, where_ob=True, coluna='acao', ordem='DESC')
                 if not lista:
                     return False
                 else:
@@ -427,23 +498,23 @@ class Funcs:
                     return True
             else:
                 self.variavel_1.delete(*self.variavel_1.get_children())
-                lista = banco.select('*', 'Acoes', order_by=True, coluna='acao', ordem='DESC')
+                lista = banco.select(select='*', from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
                 print(len(lista))
                 for i, dados in enumerate(lista):
                     self.variavel_1.insert("", END, values=dados)
 
     def editar(self):
-        # separar os dados na lista
+        # separar os dado na lista
         id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
         colum_1, colum_2, colum_3, colum_4, colum_5, colum_6, colum_7, colum_8, \
-            colum_9, colum_10 = self.lista[0].item(id_list, 'values')
-        # separar os dados da optionmenu
+            colum_9, colum_10, AUX_VAR1, AUX_VAR2 = self.lista[0].item(id_list, 'values')
+        # separar os dado da optionmenu
         itens = self.lista[4][1]
         optiomenu = 0
         for i, item in enumerate(itens):
             if item == colum_6:
                 optiomenu = i
-        # por os dados nas entrys para editar
+        # por os dado nas entrys para editar
         self.lista[8].insert(END, colum_10)  # valor total
         self.lista[1].configure(state='normal')
         self.lista[1].insert(END, colum_3)  # data
@@ -463,15 +534,64 @@ class Funcs:
                                           f'TEM CERTEZA QUE DESEJA REMOVER'
                                           f' ESSA AÇÃO?\n{self.lista[2]}\t{self.lista[3]}')
         if confirma == 'yes':
-            banco.delete('Acoes', especifico=True, arg=f"id_acao = '{self.lista[1]}'")
+            banco.delete('Acoes', especifico=True, where=f"id_acao = '{self.lista[1]}'")
             # deleta o ativo tambem caso não exista mais ordens
             lista = banco.select(select="Ativos.Ativo, Acoes.acao", from1="Ativos", join="Acoes", on="Ativo = acao",
-                                 where=f"acao = '{self.lista[2]}'", onde=True, associacao=True)
+                                 where=f"acao = '{self.lista[2]}'", where_a=True, associacao=True)
             if not lista:
-                banco.delete(tabela="Ativos", especifico=True, arg=f"Ativo = '{self.lista[2]}'")
+                banco.delete(tabela="Ativos", especifico=True, where=f"Ativo = '{self.lista[2]}'")
             self.visualizar_investimentos('', EDITAR=True)
             messagebox.showinfo('Controle de investimentos', 'Removido com sucesso!')
             return True
+
+    @staticmethod
+    def preco_medio(acao: str) -> int:
+        print('calculando')
+        banco = BancoDeDados('Investimentos')
+        # dados armazenado numa lista com tuplas, ou seja, tem 2 dimensões. Somente das compras
+        dados_compras = banco.select(select='valor_unitario, quantidade_papeis, valor_final', from1='Acoes',
+                                     where=f"tipo_de_ordem='Compra' AND acao='{acao}'",
+                                     where_c=True)
+        # soma o valor total das compras
+        soma = 0
+        for ordem in dados_compras:
+            for i, dado in enumerate(ordem):
+                if i == 2:
+                    soma += dado
+        print(soma)
+        # soma a quantidade total de papeis
+        soma_papeis = 0
+        for ordem in dados_compras:
+            for i, dado in enumerate(ordem):
+                if i == 1:
+                    soma_papeis += dado
+        print(soma_papeis)
+        # calcula o preço medio
+        if soma_papeis > 0:
+            preco_medio = soma / soma_papeis
+            print(round(preco_medio, 2))
+            return round(preco_medio, 2), soma_papeis, round(soma, 2)
+        return 0, 0
+
+    @staticmethod
+    def lucro(acao: str) -> float:
+        banco = BancoDeDados('Investimentos')
+        # dados armazenado numa lista com tuplas, ou seja, tem 2 dimensões. Somente das compras
+        dados_vendas = banco.select(select='valor_final, quantidade_papeis', from1='Acoes',
+                                    where=f"tipo_de_ordem='Venda' AND acao='{acao}'",
+                                    where_c=True)
+        # ORGANIZANDO DADOS PARA O CALCULO DO LUCRO
+        dados = banco.select(select='*', from1='Acoes', where=f"tipo_de_ordem='Compra' AND acao='{acao}'", where_c=True)
+        ult_ordem = dados[-1]  # pega a ultima ordem e salva
+        ativo, data, preco_medio = ult_ordem[1], ult_ordem[5], ult_ordem[10]  # empacota alguns dados
+        qtn_papeis = Funcs.preco_medio(acao)[1]  # pega o total da quantidade de papeis que possui
+        # FAZ O CALCULO DO LUCRO
+        lucro = dados_vendas[0][0] - (dados_vendas[0][1] * preco_medio)
+        # FAZ O CALCULO DE QUANTOS PAPEIS AINDA EXISTE
+        restam = qtn_papeis - dados_vendas[0][1]
+        valor_restante = restam * preco_medio
+
+        return round(lucro, 2), restam, preco_medio, valor_restante
 
 
 class Application:
@@ -525,6 +645,7 @@ class Application:
                 self.entry_taxa_corretagem, self.entry_valor_da_operacao, self.entry_imposto, self.entry_valor_final
             ).limpa_tela()
         elif func == 3:
+            # cadastro
             if not editar:
                 # "0 foi apenas para ocupar espaço na lista"
                 Funcs(
@@ -534,6 +655,7 @@ class Application:
                     self.entry_valor_final,
                     self.entry_codigo,
                 ).salvar()
+            # editar
             else:
                 try:
                     id_list = self.treeview.selection()[0]  # como só será selecionado um item, na tupla ele
@@ -571,13 +693,13 @@ class Application:
                     self.treeview.item(id_list, "values")[2], 0
                 ).remover()
             except TypeError as err:
-                print(err)
+                print(err, 'erro de tipagem')
                 messagebox.showerror(title="ERROR", message="Selecione um item para remover")
             except IndexError as err:
-                print(err)
+                print(err, 'erro de de indexação')
                 messagebox.showerror(title="ERROR", message="Selecione um item para remover")
             except ValueError as err:
-                print(err)
+                print(err, 'erro de valores')
                 messagebox.showerror(title="ERROR", message="Selecione um item para remover")
 
     def __bt_voltar(self):
@@ -730,28 +852,40 @@ class Application:
                 # calculo do valor da operação
                 valor_operacao = (lista[0] * lista[1]) + lista[2]
                 # calculo do imposto
-                imposto = valor_operacao * (0.0315 / 100)
+                imposto = valor_operacao * (0.0300 / 100)
                 # calculo do valor final
                 valor_final = imposto + valor_operacao
             elif lista[7].get() == 'Venda':
-                # calculo do valor da operação
-                valor_operacao = (lista[0] * lista[1]) - lista[2]
-                # calculo do imposto
-                imposto = valor_operacao * (0.0315 / 100)
-                # calculo do valor final
-                valor_final = valor_operacao - imposto
+                # Verifica se pode vender
+                validar = False
+                pega_qtn = Funcs.preco_medio(lista[8].get())  # pega quantidade de papaies do ativo em questao
+                print(pega_qtn, ' - retorno')
+                if pega_qtn[1] - lista[0] > 0:
+                    validar = True
+                if validar:
+                    # calculo do valor da operação
+                    valor_operacao = (lista[0] * lista[1]) - lista[2]
+                    # calculo do imposto
+                    imposto = valor_operacao * (0.0300 / 100)
+                    # calculo do valor final
+                    valor_final = valor_operacao - imposto
+                else:
+                    messagebox.showerror('Controle de investimentos', 'Você não pode vender uma quantidade de papeis'
+                                                                      ' que não possui!\n'
+                                                                      f'Para esse ativo ({lista[8].get()}) Você possui '
+                                                                      f'apenas ({pega_qtn[1]}) papeis')
 
             # pondo no estado norma para editar
             lista[3].configure(state='normal')
             lista[4].configure(state='normal')
             lista[5].configure(state='normal')
 
-            # excluindo dados das entrys
+            # excluindo dado das entrys
             lista[3].delete(0, END)
             lista[4].delete(0, END)
             lista[5].delete(0, END)
 
-            # pondo dados nas entrys
+            # pondo dado nas entrys
             lista[3].insert(END, f'{valor_operacao:.2f}')
             lista[4].insert(END, f'{imposto:.2f}')
             lista[5].insert(END, f'{valor_final:.2f}')
@@ -761,9 +895,10 @@ class Application:
             lista[4].configure(state='readonly')
             lista[5].configure(state='readonly')
 
-            self.inicio_frame.after(2500, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
+            self.inicio_frame.after(1500, calcular, self.entry_qnt_de_papeis, self.entry_valor_unitario,
                                     self.entry_taxa_corretagem, self.entry_valor_da_operacao,
-                                    self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV)
+                                    self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV,
+                                    self.entry_codigo)
 
         self.image = PhotoImage(file="rsz_b3_logo_white(menor).png")
         self.imagem_fundo = Label(self.inicio_frame, image=self.image, background='black')
@@ -851,7 +986,7 @@ class Application:
         # |---FAZ O CALCULO A CADA 2s---|
         calcular(self.entry_qnt_de_papeis, self.entry_valor_unitario,
                  self.entry_taxa_corretagem, self.entry_valor_da_operacao,
-                 self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV)
+                 self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV, self.entry_codigo)
 
     def __treeview_frame(self):
         #   CRIANDO FRAME PARA TREEVIEW
@@ -866,7 +1001,7 @@ class Application:
             # Obtendo o estado atual de classificação da coluna
             current_state = self.estado_atual[coluna]
 
-            # Classificando os dados de acordo com a ordem atual
+            # Classificando os dado de acordo com a ordem atual
             items = [(self.treeview.set(k, coluna), k) for k in self.treeview.get_children('')]
             if numeric:
                 # se for numerico vamos converter
@@ -877,7 +1012,7 @@ class Application:
             new_state = (not current_state[0],)
             self.estado_atual[coluna] = new_state
 
-            # Atualizando a exibição em árvore com os dados classificados
+            # Atualizando a exibição em árvore com os dado classificados
             for index, (val, k) in enumerate(items):
                 self.treeview.move(k, '', index)  # .move() vai mover o item para cima ou para baixo na coluna
 
@@ -892,19 +1027,60 @@ class Application:
                 if col != coluna:
                     self.treeview.heading(col, text=col)
 
+        def labels_precoM_lucroP(preco_medio=0, lucro_prejuizo=0, possui=0, valor=0):
+            fomatado = [f'R${preco_medio}', f'R${lucro_prejuizo}', f'R${valor}']
+            print(lucro_prejuizo)
+            #   |---LABEL---|
+            lbl_precoMedio = Label(self.tree_frame,
+                                   text=f'Preço Médio: {fomatado[0] if preco_medio > 0 else "R$ ─"}',
+                                   bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+            lbl_lucroPrejuizo = Label(self.tree_frame,
+                                      text=f'Lucro: {fomatado[1] if lucro_prejuizo > 0 else "R$ ─"}',
+                                      bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+            lbl_possui = Label(self.tree_frame,
+                               text=f'Possui: {possui if possui > 0 else "─"}',
+                               bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+            lbl_valor = Label(self.tree_frame,
+                              text=f'Valor: {fomatado[2] if valor > 0 else "R$ ─"}',
+                              bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+
+            #   |---LABEL PLACE---|
+            lbl_lucroPrejuizo.place(relx=0.46, rely=0.075)
+            lbl_precoMedio.place(relx=0.46, rely=0.015)
+            lbl_possui.place(relx=0.25, rely=0.015)
+            lbl_valor.place(relx=0.25, rely=0.075)
+
         def on_selected(event):
             funcao = Funcs(self.treeview)
             if self.filtrando.get() != 'TODOS':
+                banco = BancoDeDados(nome_banco='Investimentos')
+                #   Catando dado
+                preco_medio = banco.select(select='preco_medio', from1='Ativos',
+                                           where=f"Ativo='{self.filtrando.get()}'",
+                                           where_c=True)
+                lucro = banco.select(select='lucro', from1='Acoes',
+                                     where=f"acao='{self.filtrando.get()}' AND tipo_de_ordem='Venda'", where_c=True)
+                if not lucro:
+                    # dessa forma pois o SQL retorna uma tupla dentro de uma lista
+                    lucro = [(0,), (0,)]
+                possui = Funcs.preco_medio(self.filtrando.get())
+                valor = Funcs.preco_medio(self.filtrando.get())
+                #   Imprimindo dado no freme ao lado da combobox
+                labels_precoM_lucroP(preco_medio=preco_medio[0][0], possui=possui[1], valor=valor[2],
+                                     lucro_prejuizo=lucro[-1][0])
+
                 validar = funcao.visualizar_investimentos(self.filtrando.get(), ativo=True)
                 print(validar)
                 # se retornar uma lista vazia
                 if not validar:
                     messagebox.showerror(title='Controle de investimentos', message='Esse ativo não existe'
-                                                                                    ' mais na base dados. '
+                                                                                    ' mais na base dado. '
                                                                                     'A lista foi atualizada')
                     combobox()
             else:
+                #   Imprimindo dado na treeview
                 funcao.visualizar_investimentos('')
+                labels_precoM_lucroP()
 
         def combobox():
             # variavel para ComboBox
@@ -935,8 +1111,11 @@ class Application:
         #   CHAMANDO FRAME TREEVIEW
         self.__treeview_frame()
 
-        lbl_filtro = Label(self.tree_frame, text='Filtro', background='gray8', foreground='white')
         # |---LABEL---|
+        lbl_filtro = Label(self.tree_frame, text='Filtro', background='gray8', foreground='white')
+        labels_precoM_lucroP()
+
+        # |---LABEL PLACE---|
         lb_cadastrar_investimento.place(x=180, y=12)
         lbl_filtro.place(relx=0.015, rely=0.035)
 
@@ -970,14 +1149,15 @@ class Application:
                                     "Data", "Qtd. Papéis",
                                     "Valor Unitário", "Compra/Venda",
                                     "Corretagem", "Valor da Operação",
-                                    "Imposto", "Valor final")
+                                    "Imposto", "Valor final", "Preço Médio", "Lucro")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # usado para ajudar na lógica do filtro
         self.estado_atual = {'ID': (False,), 'Cod. Ativo': (False,),
                              'Data': (False,), 'Qtd. Papéis': (False,),
                              'Valor Unitário': (False,), 'Compra/Venda': (False,),
                              'Corretagem': (False,), 'Valor da Operação': (False,),
-                             'Imposto': (False,), 'Valor final': (False,)}
+                             'Imposto': (False,), 'Valor final': (False,), "Preço Médio": (False,),
+                             "Lucro": (False,)}
         # cabeçalho
         self.treeview.heading('ID', text='ID',
                               command=lambda: filtar('ID', 'ID', numeric=True, ))
@@ -999,6 +1179,10 @@ class Application:
                               command=lambda: filtar('Imposto', 'Imposto', numeric=True))
         self.treeview.heading('Valor final', text='Valor final',
                               command=lambda: filtar('Valor final', 'Valor final', numeric=True))
+        self.treeview.heading("Preço Médio", text="Preço Médio",
+                              command=lambda: filtar("Preço Médio", "Preço Médio", numeric=True))
+        self.treeview.heading("Lucro", text="Lucro",
+                              command=lambda: filtar("Lucro", "Lucro", numeric=True))
         # espaçamento das colunas
         self.treeview.column("ID", width=30, anchor='c', minwidth=30)
         self.treeview.column("Cod. Ativo", width=90, anchor='c', minwidth=90)
@@ -1009,7 +1193,9 @@ class Application:
         self.treeview.column("Corretagem", width=120, anchor='c', minwidth=120)
         self.treeview.column("Valor da Operação", width=180, anchor='c', minwidth=180)
         self.treeview.column("Imposto", width=90, anchor='c', minwidth=90)
-        self.treeview.column("Valor final", width=120, anchor='c', minwidth=120)
+        self.treeview.column('Valor final', width=120, anchor='c', minwidth=120)
+        self.treeview.column("Preço Médio", width=120, anchor='c', minwidth=120)
+        self.treeview.column("Lucro", width=120, anchor='c', minwidth=120)
         # |---CROLLBAR---|
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
         self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
@@ -1143,12 +1329,12 @@ class Application:
             lista[4].configure(state='normal')
             lista[5].configure(state='normal')
 
-            # excluindo dados das entrys
+            # excluindo dado das entrys
             lista[3].delete(0, END)
             lista[4].delete(0, END)
             lista[5].delete(0, END)
 
-            # pondo dados nas entrys
+            # pondo dado nas entrys
             lista[3].insert(END, f'{valor_operacao:.2f}')
             lista[4].insert(END, f'{imposto:.2f}')
             lista[5].insert(END, f'{valor_final:.2f}')
