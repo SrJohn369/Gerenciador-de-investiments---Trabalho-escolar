@@ -6,6 +6,8 @@ import tkinter as tk
 from tkcalendar import Calendar, DateEntry
 from datetime import date
 import sqlite3
+import pandas as pd
+from tabulate import tabulate
 
 
 class BancoDeDados:
@@ -391,7 +393,7 @@ class Funcs:
                     print(ult_id, '= id')
                     # atualiza a tabela de ações
                     banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='-'",
+                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='0.0'",
                                           where=f"id_acao={ult_id[0]} AND tipo_de_ordem='Compra'")
                 # diagnostico
                 banco.select('*', 'Acoes')
@@ -426,7 +428,7 @@ class Funcs:
                     print(ult_id, '= id')
                     # atualiza a tabela de ações
                     banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='-'",
+                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='0.0'",
                                           where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Compra'")
                 elif self.lista[4].get() == 'Venda':
                     # captura o id gerado
@@ -437,9 +439,9 @@ class Funcs:
                     print(ult_id, '= id')
                     # atualiza a tabela de ações
                     banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='-', lucro='{Funcs.lucro(self.lista[9])[0]}'",
+                                          set=f"preco_medio='0.0', lucro='{Funcs.lucro(self.lista[9])[0]}'",
                                           where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Venda'")
-                    _ ,restam, preco_medio, valor_restante = Funcs.lucro(self.lista[9])
+                    _, restam, preco_medio, valor_restante = Funcs.lucro(self.lista[9])
                     # atualiza a tabela de Ativos
                     banco.atualizarTabela(nomeTabela='Ativos',
                                           set=f"lucro='{Funcs.lucro(self.lista[9])[0]}'",
@@ -457,10 +459,13 @@ class Funcs:
                                               'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
 
             if confirma == 'yes':
-                banco.atualizarTabela("Ativos", f"{34}", f"{self.lista[11]}")
+                # Atualiza ativos
+                banco.atualizarTabela(nomeTabela="Ativos",
+                                      set=f"lucro='{34}', preco_medio='{55}'",
+                                      where=f"{self.lista[11]}")
                 banco.atualizarTabela(
-                    'Acoes',
-                    f"""data =              '{self.lista[1].get()}',
+                    nomeTabela='Acoes',
+                    set=f"""data =              '{self.lista[1].get()}',
                         quantidade_papeis = '{self.lista[2].get()}',
                         valor_unitario =    '{self.lista[3].get()}',
                         tipo_de_ordem =     '{self.lista[4].get()}',
@@ -468,7 +473,7 @@ class Funcs:
                         valor_da_opercao =  '{self.lista[6]}',
                         imposto =           '{self.lista[7]}',
                         valor_final =       '{self.lista[8]}'     """,
-                    f"""id_acao = '{self.lista[10]}'"""
+                    where=f"""id_acao = '{self.lista[10]}'"""
                 )
                 self.lista[9].destroy()
                 self.visualizar_investimentos('', EDITAR=True)
@@ -482,13 +487,15 @@ class Funcs:
         banco = BancoDeDados('Investimentos')
         if EDITAR:
             self.lista[0].delete(*self.lista[0].get_children())
-            lista = banco.select('*', 'Acoes', order_by=True, coluna='acao', ordem='DESC')
+            lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
+                                 from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
             for i in lista:
                 self.lista[0].insert("", END, values=i)
         else:
             if ativo:
                 self.variavel_1.delete(*self.variavel_1.get_children())
-                lista = banco.select('*', 'Acoes', where=f"acao = '{evento}'",
+                lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
+                                     from1='Acoes', where=f"acao = '{evento}'",
                                      order_by=True, where_ob=True, coluna='acao', ordem='DESC')
                 if not lista:
                     return False
@@ -498,35 +505,40 @@ class Funcs:
                     return True
             else:
                 self.variavel_1.delete(*self.variavel_1.get_children())
-                lista = banco.select(select='*', from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
+                lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
+                                     from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
                 print(len(lista))
                 for i, dados in enumerate(lista):
                     self.variavel_1.insert("", END, values=dados)
 
     def editar(self):
+        # chamando o banco
+        banco = BancoDeDados('Investimentos')
         # separar os dado na lista
         id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
-        colum_1, colum_2, colum_3, colum_4, colum_5, colum_6, colum_7, colum_8, \
-            colum_9, colum_10, AUX_VAR1, AUX_VAR2 = self.lista[0].item(id_list, 'values')
+        colum_1, colum_2, colum_3, colum_4, colum_5, colum_6 = self.lista[0].item(id_list, 'values')
+        dados = banco.select(select='quantidade_papeis, tipo_de_ordem, valor_unitario, corretagem, imposto,'
+                                    ' valor_da_opercao', from1='Acoes', where_c=True, where=f"id_acao='{colum_1}'")
+        print(dados)
         # separar os dado da optionmenu
         itens = self.lista[4][1]
         optiomenu = 0
         for i, item in enumerate(itens):
-            if item == colum_6:
+            if item == dados[0][1]:
                 optiomenu = i
         # por os dado nas entrys para editar
-        self.lista[8].insert(END, colum_10)  # valor total
+        self.lista[8].insert(END, colum_4)  # valor total
         self.lista[1].configure(state='normal')
         self.lista[1].insert(END, colum_3)  # data
         self.lista[1].configure(state='readonly')
-        self.lista[2].insert(END, colum_4)  # qtn papeis
+        self.lista[2].insert(END, dados[0][0])  # qtn papeis
         # aqui tive que guardar tupla dentro de tupla de outra
         # tupla para usar os valores e da o set() correto
         self.lista[4][0].set(self.lista[4][1][optiomenu])
-        self.lista[3].insert(END, colum_5)  # valor unit
-        self.lista[5].insert(END, colum_7)  # corretagem
-        self.lista[6].insert(END, colum_8)  # valor op
-        self.lista[7].insert(END, colum_9)  # imposto
+        self.lista[3].insert(END, dados[0][2])  # valor unit
+        self.lista[5].insert(END, dados[0][3])  # corretagem
+        self.lista[6].insert(END, dados[0][5])  # valor op
+        self.lista[7].insert(END, dados[0][4])  # imposto
 
     def remover(self):
         banco = BancoDeDados('Investimentos')
@@ -995,6 +1007,57 @@ class Application:
         #   CONFIGURANDO FRAME
         self.tree_frame.place(y=80, x=10, width=580, height=312)
 
+    def __frame_detalhe(self):
+        # crinado um objeto do banco
+        banco = BancoDeDados("Investimentos")
+        # cria uma tela
+        self.__nova_tela(width=1100, height=500)
+        # criando frame
+        self.frame_D = Frame(self.new_window, background='gray8')
+
+        # criando labels
+        lbl_possui = Label(self.new_window, text=f'Possui:  R$', font=('KacstOffice', '10'),
+                           bg='black', fg='#2fc7f4')
+        lbl_valor = Label(self.new_window, text=f'Valor Total:  R$', font=('KacstOffice', '10'),
+                          bg='black', fg='#2fc7f4')
+        lbl_precoMedio = Label(self.new_window, text=f'Preço Médio:  R$', font=('KacstOffice', '10'),
+                               bg='black', fg='#2fc7f4')
+        lbl_lucro = Label(self.new_window, text=f'Lucro:  R$', font=('KacstOffice', '10'),
+                          bg='black', fg='#2fc7f4')
+
+        # possicionando labels
+        lbl_possui.pack(side='left', anchor='n', expand=True)
+        lbl_valor.pack(side='left', anchor='n', expand=True)
+        lbl_precoMedio.pack(side='left', anchor='n', expand=True)
+        lbl_lucro.pack(side='left', anchor='n', expand=True)
+        # possicionando frame
+        self.frame_D.place(relx=0, rely=0.04, relwidth=1, relheight=1)
+
+        # lista de dados
+        conn = sqlite3.connect('Investimentos.db')
+        query = "SELECT acao, data, quantidade_papeis, valor_unitario, tipo_de_ordem, corretagem," \
+                "valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes"
+        df = pd.read_sql_query(query, conn)
+        print(df.keys())
+        novo_df = {'Ação': df['acao'],
+                   'Data': df['data'],
+                   'Papeis': df['quantidade_papeis'],
+                   'V. Unit': df['valor_unitario'],
+                   'C/V': df['tipo_de_ordem'],
+                   'Corretagem': df['corretagem'],
+                   'V. Operção': df['valor_da_opercao'],
+                   'Imposto': df['imposto'],
+                   'V. Final': df['valor_final'],
+                   'P. Médio': df['preco_medio'],
+                   'Lucro': df['lucro']}
+        # Formatando o DataFrame usando tabulat
+        tabela_formatada = tabulate(novo_df, headers='keys', tablefmt='grid', numalign='center', showindex=False)
+        # plotando a tabela
+        texto_tabela = tk.Text(self.frame_D, wrap='none', foreground='#2fc7f4', background='gray8')
+        texto_tabela.insert(tk.END, tabela_formatada)
+        texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
+        print(tabela_formatada)
+
     def __frame_investimento(self):
         def filtar(coluna, concatena, numeric=False):
 
@@ -1127,6 +1190,10 @@ class Application:
         self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
                                 command=lambda: self.__chamada(4, new_frame=False))
+        self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
+                                  fg='white', borderwidth=2, highlightbackground='black',
+                                  command=lambda: self.__frame_detalhe())
+
         # |---TREEVIEW---|
         self.treeview = ttk.Treeview(self.tree_frame, height=3)
         # |---COMBOBOX---|
@@ -1135,51 +1202,32 @@ class Application:
         #   se não defininir o command na Scrollbar e não configurar a qauntidade de colunas na treeview a barra de
         #   rolagem provavelmente não funcionará
         self.scrollbar_vertical = Scrollbar(self.tree_frame, orient='vertical', command=self.treeview.yview)
-        self.scrollbar_horizontal = Scrollbar(self.tree_frame, orient='horizontal', command=self.treeview.xview)
         self.treeview.configure(yscrollcommand=self.scrollbar_vertical.set)
-        self.treeview.configure(xscrollcommand=self.scrollbar_horizontal.set)
 
         #   CONFIGURANDO BOTOES e TREEVIEW
         # |---BOTÃO--|
         self.bt_remover.place(relx=0.83, rely=0.015)
         self.bt_editar.place(relx=0.70, rely=0.015)
+        self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
         # |---TREEVIEW---|
-        self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.805)
+        self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.79)
         self.treeview["columns"] = ("ID", "Cod. Ativo",
-                                    "Data", "Qtd. Papéis",
-                                    "Valor Unitário", "Compra/Venda",
-                                    "Corretagem", "Valor da Operação",
-                                    "Imposto", "Valor final", "Preço Médio", "Lucro")
+                                    "Data", "Valor final", "Preço Médio", "Lucro")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # usado para ajudar na lógica do filtro
         self.estado_atual = {'ID': (False,), 'Cod. Ativo': (False,),
-                             'Data': (False,), 'Qtd. Papéis': (False,),
-                             'Valor Unitário': (False,), 'Compra/Venda': (False,),
-                             'Corretagem': (False,), 'Valor da Operação': (False,),
-                             'Imposto': (False,), 'Valor final': (False,), "Preço Médio": (False,),
-                             "Lucro": (False,)}
+                             'Data': (False,), 'Valor final': (False,),
+                             "Preço Médio": (False,), "Lucro": (False,)}
         # cabeçalho
         self.treeview.heading('ID', text='ID',
-                              command=lambda: filtar('ID', 'ID', numeric=True, ))
+                              command=lambda: filtar('ID', 'ID'))
         self.treeview.heading('Cod. Ativo', text='Cod. Ativo',
                               command=lambda: filtar('Cod. Ativo', 'Cod. Ativo'))
         self.treeview.heading('Data', text='Data',
                               command=lambda: filtar('Data', 'Data'))
-        self.treeview.heading('Qtd. Papéis', text='Qtd. Papéis',
-                              command=lambda: filtar('Qtd. Papéis', 'Qtd. Papéis', numeric=True))
-        self.treeview.heading('Valor Unitário', text='Valor Unitário',
-                              command=lambda: filtar('Valor Unitário', 'Valor Unitário', numeric=True))
-        self.treeview.heading('Compra/Venda', text='Compra/Venda',
-                              command=lambda: filtar('Compra/Venda', 'Compra/Venda'))
-        self.treeview.heading('Corretagem', text='Corretagem',
-                              command=lambda: filtar('Corretagem', 'Corretagem', numeric=True))
-        self.treeview.heading('Valor da Operação', text='Valor da Operação',
-                              command=lambda: filtar('Valor da Operação', 'Valor da Operação', numeric=True))
-        self.treeview.heading('Imposto', text='Imposto',
-                              command=lambda: filtar('Imposto', 'Imposto', numeric=True))
-        self.treeview.heading('Valor final', text='Valor final',
+        self.treeview.heading('Valor final', text='V. Final',
                               command=lambda: filtar('Valor final', 'Valor final', numeric=True))
-        self.treeview.heading("Preço Médio", text="Preço Médio",
+        self.treeview.heading("Preço Médio", text="P. Médio",
                               command=lambda: filtar("Preço Médio", "Preço Médio", numeric=True))
         self.treeview.heading("Lucro", text="Lucro",
                               command=lambda: filtar("Lucro", "Lucro", numeric=True))
@@ -1187,18 +1235,11 @@ class Application:
         self.treeview.column("ID", width=30, anchor='c', minwidth=30)
         self.treeview.column("Cod. Ativo", width=90, anchor='c', minwidth=90)
         self.treeview.column("Data", width=90, anchor='c', minwidth=90)
-        self.treeview.column("Qtd. Papéis", width=100, anchor='c', minwidth=100)
-        self.treeview.column("Valor Unitário", width=120, anchor='c', minwidth=120)
-        self.treeview.column("Compra/Venda", width=120, anchor='c', minwidth=120)
-        self.treeview.column("Corretagem", width=120, anchor='c', minwidth=120)
-        self.treeview.column("Valor da Operação", width=180, anchor='c', minwidth=180)
-        self.treeview.column("Imposto", width=90, anchor='c', minwidth=90)
-        self.treeview.column('Valor final', width=120, anchor='c', minwidth=120)
-        self.treeview.column("Preço Médio", width=120, anchor='c', minwidth=120)
-        self.treeview.column("Lucro", width=120, anchor='c', minwidth=120)
+        self.treeview.column('Valor final', width=90, anchor='c', minwidth=90)
+        self.treeview.column("Preço Médio", width=90, anchor='c', minwidth=90)
+        self.treeview.column("Lucro", width=90, anchor='c', minwidth=90)
         # |---CROLLBAR---|
-        self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.85)
-        self.scrollbar_horizontal.place(relx=0.015, rely=0.94, relwidth=0.9365)
+        self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.79)
 
     def __nova_tela(self, width, height, locateY=2, locateX=2):
         # CHAMA UMA NOVA JANELA PARA EDIÇÃO DE DADOS
