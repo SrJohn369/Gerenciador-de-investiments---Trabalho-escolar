@@ -487,16 +487,17 @@ class Funcs:
         banco = BancoDeDados('Investimentos')
         if EDITAR:
             self.lista[0].delete(*self.lista[0].get_children())
-            lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
-                                 from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
+            lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data), valor_final, preco_medio, lucro",
+                                 from1='Acoes', order_by=True, coluna='data', ordem='DESC')
             for i in lista:
                 self.lista[0].insert("", END, values=i)
         else:
             if ativo:
                 self.variavel_1.delete(*self.variavel_1.get_children())
-                lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
+                lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
+                                            " valor_final, preco_medio, lucro",
                                      from1='Acoes', where=f"acao = '{evento}'",
-                                     order_by=True, where_ob=True, coluna='acao', ordem='DESC')
+                                     order_by=True, where_ob=True, coluna='data', ordem='DESC')
                 if not lista:
                     return False
                 else:
@@ -505,8 +506,9 @@ class Funcs:
                     return True
             else:
                 self.variavel_1.delete(*self.variavel_1.get_children())
-                lista = banco.select(select='id_acao, acao, data, valor_final, preco_medio, lucro',
-                                     from1='Acoes', order_by=True, coluna='acao', ordem='DESC')
+                lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
+                                            " valor_final, preco_medio, lucro",
+                                     from1='Acoes', order_by=True, coluna='data', ordem='DESC')
                 print(len(lista))
                 for i, dados in enumerate(lista):
                     self.variavel_1.insert("", END, values=dados)
@@ -518,7 +520,7 @@ class Funcs:
         id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
         colum_1, colum_2, colum_3, colum_4, colum_5, colum_6 = self.lista[0].item(id_list, 'values')
         dados = banco.select(select='quantidade_papeis, tipo_de_ordem, valor_unitario, corretagem, imposto,'
-                                    ' valor_da_opercao', from1='Acoes', where_c=True, where=f"id_acao='{colum_1}'")
+                                    ' valor_da_opercao, data', from1='Acoes', where_c=True, where=f"id_acao='{colum_1}'")
         print(dados)
         # separar os dado da optionmenu
         itens = self.lista[4][1]
@@ -529,7 +531,7 @@ class Funcs:
         # por os dado nas entrys para editar
         self.lista[8].insert(END, colum_4)  # valor total
         self.lista[1].configure(state='normal')
-        self.lista[1].insert(END, colum_3)  # data
+        self.lista[1].insert(END, dados[0][6])  # data
         self.lista[1].configure(state='readonly')
         self.lista[2].insert(END, dados[0][0])  # qtn papeis
         # aqui tive que guardar tupla dentro de tupla de outra
@@ -1007,22 +1009,43 @@ class Application:
         #   CONFIGURANDO FRAME
         self.tree_frame.place(y=80, x=10, width=580, height=312)
 
-    def __frame_detalhe(self):
+    def __frame_detalhe(self, filtro, one=False):
+        # variáveis
+        preco_medio = lucro = possui = valor = 0
         # crinado um objeto do banco
         banco = BancoDeDados("Investimentos")
+        #   Catando dado se for apenas um ativo
+        if one:
+            preco_medio = banco.select(select='preco_medio', from1='Ativos',
+                                       where=f"Ativo='{self.filtrando.get()}'",
+                                       where_c=True)
+            preco_medio = preco_medio[0][0]
+            lucro = banco.select(select='lucro', from1='Acoes',
+                                 where=f"acao='{self.filtrando.get()}' AND tipo_de_ordem='Venda'", where_c=True)
+            if not lucro:
+                # dessa forma pois o SQL retorna uma tupla dentro de uma lista
+                lucro = [(0,), (0,)]
+            possui = Funcs.preco_medio(self.filtrando.get())
+            possui = possui[1]
+            valor = Funcs.preco_medio(self.filtrando.get())
+            valor = valor[2]
         # cria uma tela
         self.__nova_tela(width=1100, height=500)
         # criando frame
         self.frame_D = Frame(self.new_window, background='gray8')
 
         # criando labels
-        lbl_possui = Label(self.new_window, text=f'Possui:  R$', font=('KacstOffice', '10'),
+        lbl_possui = Label(self.new_window, text=f'Possui: {possui if possui > 0 else "─"}',
+                           font=('KacstOffice', '10'),
                            bg='black', fg='#2fc7f4')
-        lbl_valor = Label(self.new_window, text=f'Valor Total:  R$', font=('KacstOffice', '10'),
+        lbl_valor = Label(self.new_window, text=f'Valor Total: R$ {valor if valor > 0 else "─"}',
+                          font=('KacstOffice', '10'),
                           bg='black', fg='#2fc7f4')
-        lbl_precoMedio = Label(self.new_window, text=f'Preço Médio:  R$', font=('KacstOffice', '10'),
+        lbl_precoMedio = Label(self.new_window, text=f'Preço Médio: R$ {preco_medio if possui > 0 else "─"}',
+                               font=('KacstOffice', '10'),
                                bg='black', fg='#2fc7f4')
-        lbl_lucro = Label(self.new_window, text=f'Lucro:  R$', font=('KacstOffice', '10'),
+        lbl_lucro = Label(self.new_window, text=f'Lucro: R$ {lucro[0][0] if lucro[0][0] > 0 else "─"}',
+                          font=('KacstOffice', '10'),
                           bg='black', fg='#2fc7f4')
 
         # possicionando labels
@@ -1034,29 +1057,60 @@ class Application:
         self.frame_D.place(relx=0, rely=0.04, relwidth=1, relheight=1)
 
         # lista de dados
-        conn = sqlite3.connect('Investimentos.db')
-        query = "SELECT acao, data, quantidade_papeis, valor_unitario, tipo_de_ordem, corretagem," \
-                "valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes"
-        df = pd.read_sql_query(query, conn)
-        print(df.keys())
-        novo_df = {'Ação': df['acao'],
-                   'Data': df['data'],
-                   'Papeis': df['quantidade_papeis'],
-                   'V. Unit': df['valor_unitario'],
-                   'C/V': df['tipo_de_ordem'],
-                   'Corretagem': df['corretagem'],
-                   'V. Operção': df['valor_da_opercao'],
-                   'Imposto': df['imposto'],
-                   'V. Final': df['valor_final'],
-                   'P. Médio': df['preco_medio'],
-                   'Lucro': df['lucro']}
-        # Formatando o DataFrame usando tabulat
-        tabela_formatada = tabulate(novo_df, headers='keys', tablefmt='grid', numalign='center', showindex=False)
-        # plotando a tabela
-        texto_tabela = tk.Text(self.frame_D, wrap='none', foreground='#2fc7f4', background='gray8')
-        texto_tabela.insert(tk.END, tabela_formatada)
-        texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
-        print(tabela_formatada)
+
+        # Se for apenas 1 ativo
+        if one:
+            conn = sqlite3.connect('Investimentos.db')
+            query = f"SELECT acao, strftime('%d/%m/%Y', data)," \
+                    f" quantidade_papeis, valor_unitario, tipo_de_ordem, corretagem," \
+                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes" \
+                    f" WHERE acao='{filtro}' ORDER BY data DESC"
+            df = pd.read_sql_query(query, conn)
+            print(df.keys())
+            novo_df = {'Ação': df['acao'],
+                       'Data': df["strftime('%d/%m/%Y', data)"],
+                       'Papeis': df['quantidade_papeis'],
+                       'V. Unit': df['valor_unitario'],
+                       'C/V': df['tipo_de_ordem'],
+                       'Corretagem': df['corretagem'],
+                       'V. Operção': df['valor_da_opercao'],
+                       'Imposto': df['imposto'],
+                       'V. Final': df['valor_final'],
+                       'P. Médio': df['preco_medio'],
+                       'Lucro': df['lucro']}
+            # Formatando o DataFrame usando tabulat
+            tabela_formatada = tabulate(novo_df, headers='keys', tablefmt='grid', numalign='center',
+                                        showindex=False)
+            # plotando a tabela
+            texto_tabela = tk.Text(self.frame_D, wrap='none', foreground='white', background='gray8')
+            texto_tabela.insert(tk.END, tabela_formatada)
+            texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
+        # Se for todos os ativos
+        else:
+            conn = sqlite3.connect('Investimentos.db')
+            query = f"SELECT acao, strftime('%d/%m/%Y', data), quantidade_papeis, valor_unitario, tipo_de_ordem," \
+                    f" corretagem," \
+                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes ORDER BY data DESC"
+            df = pd.read_sql_query(query, conn)
+            print(df.values)
+            novo_df = {'Ação': df['acao'],
+                       'Data': df["strftime('%d/%m/%Y', data)"],
+                       'Papeis': df['quantidade_papeis'],
+                       'V. Unit': df['valor_unitario'],
+                       'C/V': df['tipo_de_ordem'],
+                       'Corretagem': df['corretagem'],
+                       'V. Operção': df['valor_da_opercao'],
+                       'Imposto': df['imposto'],
+                       'V. Final': df['valor_final'],
+                       'P. Médio': df['preco_medio'],
+                       'Lucro': df['lucro']}
+            # Formatando o DataFrame usando tabulat
+            tabela_formatada = tabulate(novo_df, headers='keys', tablefmt='grid', numalign='center',
+                                        showindex=False)
+            # plotando a tabela
+            texto_tabela = tk.Text(self.frame_D, wrap='none', foreground='white', background='gray8')
+            texto_tabela.insert(tk.END, tabela_formatada)
+            texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
 
     def __frame_investimento(self):
         def filtar(coluna, concatena, numeric=False):
@@ -1116,6 +1170,11 @@ class Application:
         def on_selected(event):
             funcao = Funcs(self.treeview)
             if self.filtrando.get() != 'TODOS':
+                # cria botão para detalhar ativo
+                self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
+                                          fg='white', borderwidth=2, highlightbackground='black',
+                                          command=lambda: self.__frame_detalhe(self.filtrando.get(), one=True))
+                self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
                 banco = BancoDeDados(nome_banco='Investimentos')
                 #   Catando dado
                 preco_medio = banco.select(select='preco_medio', from1='Ativos',
@@ -1144,6 +1203,11 @@ class Application:
                 #   Imprimindo dado na treeview
                 funcao.visualizar_investimentos('')
                 labels_precoM_lucroP()
+                # cria botão para detalhar todos os ativos
+                self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
+                                          fg='white', borderwidth=2, highlightbackground='black',
+                                          command=lambda: self.__frame_detalhe(self.filtrando.get(), one=False))
+                self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
 
         def combobox():
             # variavel para ComboBox
@@ -1190,9 +1254,6 @@ class Application:
         self.bt_editar = Button(self.tree_frame, text='Editar', font=('KacstOffice', '10'), bg='#02347c', fg='white',
                                 borderwidth=2, highlightbackground='black',
                                 command=lambda: self.__chamada(4, new_frame=False))
-        self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
-                                  fg='white', borderwidth=2, highlightbackground='black',
-                                  command=lambda: self.__frame_detalhe())
 
         # |---TREEVIEW---|
         self.treeview = ttk.Treeview(self.tree_frame, height=3)
@@ -1208,7 +1269,6 @@ class Application:
         # |---BOTÃO--|
         self.bt_remover.place(relx=0.83, rely=0.015)
         self.bt_editar.place(relx=0.70, rely=0.015)
-        self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
         # |---TREEVIEW---|
         self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.79)
         self.treeview["columns"] = ("ID", "Cod. Ativo",
