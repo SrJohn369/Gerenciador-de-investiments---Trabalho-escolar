@@ -14,9 +14,7 @@ class BancoDeDados:
     def __init__(self, nome_banco):
         # __init__ vai iniciar as funções assim que a classe for chamada
         self.__abrirBanco(nome_banco)
-        self.__criarTabela(nomeTabela='Ativos', colunasEDados='Ativo         VARCHAR(7) PRIMARY KEY,'
-                                                              'preco_medio   REAL,'
-                                                              'lucro         REAL')
+        self.__criarTabela(nomeTabela='Ativos', colunasEDados='Ativo         VARCHAR(7) PRIMARY KEY')
         self.__criarTabela(nomeTabela='Acoes',
                            colunasEDados='id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
                                          'acao                   VARCHAR(7),'
@@ -376,25 +374,13 @@ class Funcs:
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                     f"'{self.lista[8]}', 'running',"
-                                                     f"'running'",
+                                                     f"'{self.lista[8]}', '0',"
+                                                     f"'0'",
                                       "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
                                       "corretagem,valor_da_opercao,imposto,valor_final, preco_medio, lucro")
                 # atualiza a tabela de ativos
-                banco.atualizarTabela(nomeTabela='Ativos',
-                                      set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}'",
-                                      where=f"Ativo='{self.lista[9]}'")
                 # atualiza tabela de acoes
-                if self.lista[4].get() == 'Compra':
-                    # captura o id gerado
-                    cap_id = banco.select(select='id_acao', from1='Acoes', where=f"acao='{self.lista[9]}'",
-                                          where_c=True)
-                    ult_id = max(cap_id)
-                    print(ult_id, '= id')
-                    # atualiza a tabela de ações
-                    banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='0.0'",
-                                          where=f"id_acao={ult_id[0]} AND tipo_de_ordem='Compra'")
+                Funcs.preco_Med_Lucro(self.lista[9])
                 # diagnostico
                 banco.select('*', 'Acoes')
                 banco.select('*', 'Ativos')
@@ -408,44 +394,14 @@ class Funcs:
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
                                                      f"'{self.lista[6]}',       '{self.lista[7]}',"
-                                                     f"'{self.lista[8]}', 'running',"
-                                                     f"'running'",
+                                                     f"'{self.lista[8]}', '0',"
+                                                     f"'0'",
                                       "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
                                       "corretagem,valor_da_opercao,imposto,valor_final, preco_medio, lucro")
 
                 # atualiza a tabela de ativos
-                banco.atualizarTabela(nomeTabela='Ativos',
-                                      set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}'",
-                                      where=f"Ativo='{self.lista[9]}'")
-
                 # atualiza tabela de acoes
-                if self.lista[4].get() == 'Compra':
-                    # captura o id gerado
-                    cap_id = banco.select(select='id_acao', from1='Acoes',
-                                          where=f"acao='{self.lista[9]}'  AND tipo_de_ordem='Compra'",
-                                          where_c=True)
-                    ult_id = max(cap_id)
-                    print(ult_id, '= id')
-                    # atualiza a tabela de ações
-                    banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='{Funcs.preco_medio(self.lista[9])[0]}', lucro='0.0'",
-                                          where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Compra'")
-                elif self.lista[4].get() == 'Venda':
-                    # captura o id gerado
-                    cap_id = banco.select(select='id_acao', from1='Acoes',
-                                          where=f"acao='{self.lista[9]}' AND tipo_de_ordem='Venda'",
-                                          where_c=True)
-                    ult_id = max(cap_id)
-                    print(ult_id, '= id')
-                    # atualiza a tabela de ações
-                    banco.atualizarTabela(nomeTabela='Acoes',
-                                          set=f"preco_medio='0.0', lucro='{Funcs.lucro(self.lista[9])[0]}'",
-                                          where=f"id_acao='{ult_id[0]}' AND tipo_de_ordem='Venda'")
-                    _, restam, preco_medio, valor_restante = Funcs.lucro(self.lista[9])
-                    # atualiza a tabela de Ativos
-                    banco.atualizarTabela(nomeTabela='Ativos',
-                                          set=f"lucro='{Funcs.lucro(self.lista[9])[0]}'",
-                                          where=f"Ativo='{self.lista[9]}'")
+                Funcs.preco_Med_Lucro(self.lista[9])
                 # info para o usuario
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 # diagnostico
@@ -459,10 +415,6 @@ class Funcs:
                                               'TEM CERTEZA QUE DESEJA SALVAR OS DADOS ALTERADOS?', )
 
             if confirma == 'yes':
-                # Atualiza ativos
-                banco.atualizarTabela(nomeTabela="Ativos",
-                                      set=f"lucro='{34}', preco_medio='{55}'",
-                                      where=f"{self.lista[11]}")
                 banco.atualizarTabela(
                     nomeTabela='Acoes',
                     set=f"""data =              '{self.lista[1].get()}',
@@ -475,6 +427,7 @@ class Funcs:
                         valor_final =       '{self.lista[8]}'     """,
                     where=f"""id_acao = '{self.lista[10]}'"""
                 )
+                Funcs.preco_Med_Lucro()
                 self.lista[9].destroy()
                 self.visualizar_investimentos('', EDITAR=True)
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
@@ -520,7 +473,8 @@ class Funcs:
         id_list = self.lista[0].selection()[0]  # como só será selecionado um item, na tupla ele sempre será 0
         colum_1, colum_2, colum_3, colum_4, colum_5, colum_6 = self.lista[0].item(id_list, 'values')
         dados = banco.select(select='quantidade_papeis, tipo_de_ordem, valor_unitario, corretagem, imposto,'
-                                    ' valor_da_opercao, data', from1='Acoes', where_c=True, where=f"id_acao='{colum_1}'")
+                                    ' valor_da_opercao, data', from1='Acoes', where_c=True,
+                             where=f"id_acao='{colum_1}'")
         print(dados)
         # separar os dado da optionmenu
         itens = self.lista[4][1]
@@ -559,53 +513,61 @@ class Funcs:
             return True
 
     @staticmethod
-    def preco_medio(acao: str) -> int:
-        print('calculando')
+    def preco_Med_Lucro(acao: str) -> int:
+        print('verificando...')
         banco = BancoDeDados('Investimentos')
         # dados armazenado numa lista com tuplas, ou seja, tem 2 dimensões. Somente das compras
-        dados_compras = banco.select(select='valor_unitario, quantidade_papeis, valor_final', from1='Acoes',
-                                     where=f"tipo_de_ordem='Compra' AND acao='{acao}'",
-                                     where_c=True)
-        # soma o valor total das compras
-        soma = 0
-        for ordem in dados_compras:
-            for i, dado in enumerate(ordem):
-                if i == 2:
-                    soma += dado
-        print(soma)
-        # soma a quantidade total de papeis
-        soma_papeis = 0
-        for ordem in dados_compras:
-            for i, dado in enumerate(ordem):
-                if i == 1:
-                    soma_papeis += dado
-        print(soma_papeis)
-        # calcula o preço medio
-        if soma_papeis > 0:
-            preco_medio = soma / soma_papeis
-            print(round(preco_medio, 2))
-            return round(preco_medio, 2), soma_papeis, round(soma, 2)
-        return 0, 0
+        dados_compras = banco.select(select="id_acao, quantidade_papeis, valor_final, strftime('%d/%m/%Y', data), "
+                                            "tipo_de_ordem, preco_medio",
+                                     from1='Acoes',
+                                     where_ob=True,
+                                     order_by=True,
+                                     where=f"acao='{acao}'",
+                                     coluna='data',
+                                     ordem='ASC')
+        # laço verificador
+        soma_papeis = precoMedio = papeis_restantes = 0
+        for i, ordem in enumerate(dados_compras):
+            if 'Compra' in ordem:
+                if i == 0:
+                    # calcula o preço médio
+                    precoMedio = ordem[2] / ordem[1]
+                    print(round(precoMedio, 2), '\t── Preço Médio ── Primeiro')
+                    # atualiza a tabela
+                    banco.atualizarTabela(nomeTabela="Acoes",
+                                          set=f"preco_medio='{round(precoMedio, 2)}'",
+                                          where=f"id_acao='{ordem[0]}'")
+                    soma_papeis += ordem[1]
+                else:
+                    soma_papeis += ordem[1]
+                    # consulta o último preço médio calculado
+                    ultPrecoMedio = banco.select(select="preco_medio",
+                                                 from1="Acoes",
+                                                 where_c=True,
+                                                 where=f"id_acao='{dados_compras[i - 1][0]}'")[0][0]
+                    precoMedio = ((soma_papeis - ordem[1] * ultPrecoMedio) + ordem[2]) / soma_papeis
+                    print(f"CALCULO\n"
+                          f"({soma_papeis - ordem[1]} * {ultPrecoMedio}) + {ordem[2]}\n"
+                          f"───────────────────────\t=\t{round(precoMedio, 2)}\n"
+                          f"\t\t{soma_papeis}")
+                    # atualiza a tabela
+                    banco.atualizarTabela(nomeTabela="Acoes",
+                                          set=f"preco_medio='{round(precoMedio, 2)}'",
+                                          where=f"id_acao='{ordem[0]}'")
+                    papeis_restantes = soma_papeis
 
-    @staticmethod
-    def lucro(acao: str) -> float:
-        banco = BancoDeDados('Investimentos')
-        # dados armazenado numa lista com tuplas, ou seja, tem 2 dimensões. Somente das compras
-        dados_vendas = banco.select(select='valor_final, quantidade_papeis', from1='Acoes',
-                                    where=f"tipo_de_ordem='Venda' AND acao='{acao}'",
-                                    where_c=True)
-        # ORGANIZANDO DADOS PARA O CALCULO DO LUCRO
-        dados = banco.select(select='*', from1='Acoes', where=f"tipo_de_ordem='Compra' AND acao='{acao}'", where_c=True)
-        ult_ordem = dados[-1]  # pega a ultima ordem e salva
-        ativo, data, preco_medio = ult_ordem[1], ult_ordem[5], ult_ordem[10]  # empacota alguns dados
-        qtn_papeis = Funcs.preco_medio(acao)[1]  # pega o total da quantidade de papeis que possui
-        # FAZ O CALCULO DO LUCRO
-        lucro = dados_vendas[0][0] - (dados_vendas[0][1] * preco_medio)
-        # FAZ O CALCULO DE QUANTOS PAPEIS AINDA EXISTE
-        restam = qtn_papeis - dados_vendas[0][1]
-        valor_restante = restam * preco_medio
+            elif 'Venda' in ordem:
+                papeis_restantes = soma_papeis
+                # valor final da venda - (qtn desejado * ultimo PM venda) = lucro
+                lucro = ordem[2] - (ordem[1] * precoMedio)
+                # atualiza a tabela
+                banco.atualizarTabela(nomeTabela="Acoes",
+                                      set=f"lucro='{round(lucro, 2)}', preco_medio='{round(precoMedio, 2)}'",
+                                      where=f"id_acao='{ordem[0]}'")
+                # papeis restantes na venda
+                papeis_restantes = soma_papeis - ordem[1]
 
-        return round(lucro, 2), restam, preco_medio, valor_restante
+        return papeis_restantes
 
 
 class Application:
@@ -872,9 +834,9 @@ class Application:
             elif lista[7].get() == 'Venda':
                 # Verifica se pode vender
                 validar = False
-                pega_qtn = Funcs.preco_medio(lista[8].get())  # pega quantidade de papaies do ativo em questao
+                pega_qtn = Funcs.preco_Med_Lucro(lista[8].get())  # pega quantidade de papaies do ativo em questao
                 print(pega_qtn, ' - retorno')
-                if pega_qtn[1] - lista[0] > 0:
+                if pega_qtn - lista[0] > 0:
                     validar = True
                 if validar:
                     # calculo do valor da operação
@@ -887,7 +849,7 @@ class Application:
                     messagebox.showerror('Controle de investimentos', 'Você não pode vender uma quantidade de papeis'
                                                                       ' que não possui!\n'
                                                                       f'Para esse ativo ({lista[8].get()}) Você possui '
-                                                                      f'apenas ({pega_qtn[1]}) papeis')
+                                                                      f'apenas ({pega_qtn}) papeis')
 
             # pondo no estado norma para editar
             lista[3].configure(state='normal')
@@ -1016,19 +978,19 @@ class Application:
         banco = BancoDeDados("Investimentos")
         #   Catando dado se for apenas um ativo
         if one:
-            preco_medio = banco.select(select='preco_medio', from1='Ativos',
-                                       where=f"Ativo='{self.filtrando.get()}'",
-                                       where_c=True)
-            preco_medio = preco_medio[0][0]
-            lucro = banco.select(select='lucro', from1='Acoes',
-                                 where=f"acao='{self.filtrando.get()}' AND tipo_de_ordem='Venda'", where_c=True)
-            if not lucro:
-                # dessa forma pois o SQL retorna uma tupla dentro de uma lista
-                lucro = [(0,), (0,)]
-            possui = Funcs.preco_medio(self.filtrando.get())
-            possui = possui[1]
-            valor = Funcs.preco_medio(self.filtrando.get())
-            valor = valor[2]
+            #   Catando dado
+            banco = BancoDeDados(nome_banco='Investimentos')
+            dados = banco.select(select='preco_medio, lucro, tipo_de_ordem',
+                                 from1='Acoes',
+                                 where_c=True,
+                                 where=f"acao='{self.filtrando.get()}'")
+            possui = Funcs.preco_Med_Lucro(self.filtrando.get())
+            valor = dados[-1][0] * possui
+            preco_medio = round(dados[-1][0], 2)
+            lucro = 0
+            for i in dados:
+                if 'Venda' in i:
+                    lucro = lucro + i[1]
         # cria uma tela
         self.__nova_tela(width=1100, height=500)
         # criando frame
@@ -1044,7 +1006,7 @@ class Application:
         lbl_precoMedio = Label(self.new_window, text=f'Preço Médio: R$ {preco_medio if possui > 0 else "─"}',
                                font=('KacstOffice', '10'),
                                bg='black', fg='#2fc7f4')
-        lbl_lucro = Label(self.new_window, text=f'Lucro: R$ {lucro[0][0] if lucro[0][0] > 0 else "─"}',
+        lbl_lucro = Label(self.new_window, text=f'Lucro: R$ {lucro if lucro > 0 else "─"}',
                           font=('KacstOffice', '10'),
                           bg='black', fg='#2fc7f4')
 
@@ -1112,6 +1074,29 @@ class Application:
             texto_tabela.insert(tk.END, tabela_formatada)
             texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
 
+    def __labels_precoM_lucroP(self, preco_medio=0, lucro_prejuizo=0, possui=0, valor=0):
+        fomatado = [f'R${preco_medio}', f'R${lucro_prejuizo}', f'R${valor}']
+        print(lucro_prejuizo)
+        #   |---LABEL---|
+        self.lbl_precoMedio = Label(self.tree_frame,
+                                    text=f'Preço Médio: {fomatado[0] if preco_medio > 0 else "R$ ─"}',
+                                    bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+        self.lbl_lucroPrejuizo = Label(self.tree_frame,
+                                       text=f'Lucro: {fomatado[1] if lucro_prejuizo > 0 else "R$ ─"}',
+                                       bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+        self.lbl_possui = Label(self.tree_frame,
+                                text=f'Possui: {possui if possui > 0 else "─"}',
+                                bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+        self.lbl_valor = Label(self.tree_frame,
+                               text=f'Valor: {fomatado[2] if valor > 0 else "R$ ─"}',
+                               bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
+
+        #   |---LABEL PLACE---|
+        self.lbl_lucroPrejuizo.place(relx=0.46, rely=0.075)
+        self.lbl_precoMedio.place(relx=0.46, rely=0.015)
+        self.lbl_possui.place(relx=0.25, rely=0.015)
+        self.lbl_valor.place(relx=0.25, rely=0.075)
+
     def __frame_investimento(self):
         def filtar(coluna, concatena, numeric=False):
 
@@ -1144,70 +1129,64 @@ class Application:
                 if col != coluna:
                     self.treeview.heading(col, text=col)
 
-        def labels_precoM_lucroP(preco_medio=0, lucro_prejuizo=0, possui=0, valor=0):
-            fomatado = [f'R${preco_medio}', f'R${lucro_prejuizo}', f'R${valor}']
-            print(lucro_prejuizo)
-            #   |---LABEL---|
-            lbl_precoMedio = Label(self.tree_frame,
-                                   text=f'Preço Médio: {fomatado[0] if preco_medio > 0 else "R$ ─"}',
-                                   bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
-            lbl_lucroPrejuizo = Label(self.tree_frame,
-                                      text=f'Lucro: {fomatado[1] if lucro_prejuizo > 0 else "R$ ─"}',
-                                      bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
-            lbl_possui = Label(self.tree_frame,
-                               text=f'Possui: {possui if possui > 0 else "─"}',
-                               bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
-            lbl_valor = Label(self.tree_frame,
-                              text=f'Valor: {fomatado[2] if valor > 0 else "R$ ─"}',
-                              bg='gray8', fg='#2fc7f4', font=('KacstOffice', '8'))
-
-            #   |---LABEL PLACE---|
-            lbl_lucroPrejuizo.place(relx=0.46, rely=0.075)
-            lbl_precoMedio.place(relx=0.46, rely=0.015)
-            lbl_possui.place(relx=0.25, rely=0.015)
-            lbl_valor.place(relx=0.25, rely=0.075)
-
         def on_selected(event):
             funcao = Funcs(self.treeview)
             if self.filtrando.get() != 'TODOS':
+                # Destroi labels anteriores
+                self.lbl_valor.destroy()
+                self.lbl_possui.destroy()
+                self.lbl_precoMedio.destroy()
+                self.lbl_lucroPrejuizo.destroy()
                 # cria botão para detalhar ativo
                 self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
                                           fg='white', borderwidth=2, highlightbackground='black',
                                           command=lambda: self.__frame_detalhe(self.filtrando.get(), one=True))
                 self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
-                banco = BancoDeDados(nome_banco='Investimentos')
                 #   Catando dado
-                preco_medio = banco.select(select='preco_medio', from1='Ativos',
-                                           where=f"Ativo='{self.filtrando.get()}'",
-                                           where_c=True)
-                lucro = banco.select(select='lucro', from1='Acoes',
-                                     where=f"acao='{self.filtrando.get()}' AND tipo_de_ordem='Venda'", where_c=True)
-                if not lucro:
-                    # dessa forma pois o SQL retorna uma tupla dentro de uma lista
-                    lucro = [(0,), (0,)]
-                possui = Funcs.preco_medio(self.filtrando.get())
-                valor = Funcs.preco_medio(self.filtrando.get())
+                banco = BancoDeDados(nome_banco='Investimentos')
+                dados = banco.select(select='preco_medio, lucro, tipo_de_ordem',
+                                     from1='Acoes',
+                                     where_c=True,
+                                     where=f"acao='{self.filtrando.get()}'")
+                possui = Funcs.preco_Med_Lucro(self.filtrando.get())
+                valor = dados[-1][0] * possui
+                preco_medio = round(dados[-1][0], 2)
+                lucro = 0
+                for i in dados:
+                    if 'Venda' in i:
+                        lucro = lucro + i[1]
                 #   Imprimindo dado no freme ao lado da combobox
-                labels_precoM_lucroP(preco_medio=preco_medio[0][0], possui=possui[1], valor=valor[2],
-                                     lucro_prejuizo=lucro[-1][0])
+                self.__labels_precoM_lucroP(preco_medio=preco_medio, possui=possui, valor=valor,
+                                            lucro_prejuizo=round(lucro, 2))
 
-                validar = funcao.visualizar_investimentos(self.filtrando.get(), ativo=True)
-                print(validar)
                 # se retornar uma lista vazia
+                validar = funcao.visualizar_investimentos(self.filtrando.get(), ativo=True)
                 if not validar:
+                    # Destroi labels anteriores
+                    self.lbl_valor.destroy()
+                    self.lbl_possui.destroy()
+                    self.lbl_precoMedio.destroy()
+                    self.lbl_lucroPrejuizo.destroy()
                     messagebox.showerror(title='Controle de investimentos', message='Esse ativo não existe'
                                                                                     ' mais na base dado. '
                                                                                     'A lista foi atualizada')
+                    self.__labels_precoM_lucroP()
                     combobox()
+
             else:
                 #   Imprimindo dado na treeview
                 funcao.visualizar_investimentos('')
-                labels_precoM_lucroP()
+                # Destroi labels anteriores
+                self.lbl_valor.destroy()
+                self.lbl_possui.destroy()
+                self.lbl_precoMedio.destroy()
+                self.lbl_lucroPrejuizo.destroy()
                 # cria botão para detalhar todos os ativos
                 self.bt_detalhar = Button(self.tree_frame, text='Detalhar', font=('KacstOffice', '10'), bg='#02347c',
                                           fg='white', borderwidth=2, highlightbackground='black',
-                                          command=lambda: self.__frame_detalhe(self.filtrando.get(), one=False))
+                                          command=lambda: self.__frame_detalhe(self.filtrando.get()))
                 self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
+                self.__labels_precoM_lucroP()
 
         def combobox():
             # variavel para ComboBox
@@ -1240,7 +1219,8 @@ class Application:
 
         # |---LABEL---|
         lbl_filtro = Label(self.tree_frame, text='Filtro', background='gray8', foreground='white')
-        labels_precoM_lucroP()
+        # testa a existencia das labels
+        self.__labels_precoM_lucroP()
 
         # |---LABEL PLACE---|
         lb_cadastrar_investimento.place(x=180, y=12)
@@ -1418,12 +1398,24 @@ class Application:
                 # calculo do valor final
                 valor_final = imposto + valor_operacao
             elif lista[7].get() == 'Venda':
-                # calculo do valor da operação
-                valor_operacao = (lista[0] * lista[1]) - lista[2]
-                # calculo do imposto
-                imposto = valor_operacao * (0.0315 / 100)
-                # calculo do valor final
-                valor_final = valor_operacao - imposto
+                # Verifica se pode vender
+                validar = False
+                pega_qtn = Funcs.preco_Med_Lucro(lista[8].get())  # pega quantidade de papaies do ativo em questao
+                print(pega_qtn, ' - retorno')
+                if pega_qtn - lista[0] > 0:
+                    validar = True
+                if validar:
+                    # calculo do valor da operação
+                    valor_operacao = (lista[0] * lista[1]) - lista[2]
+                    # calculo do imposto
+                    imposto = valor_operacao * (0.0300 / 100)
+                    # calculo do valor final
+                    valor_final = valor_operacao - imposto
+                else:
+                    messagebox.showerror('Controle de investimentos', 'Você não pode vender uma quantidade de papeis'
+                                                                      ' que não possui!\n'
+                                                                      f'Para esse ativo ({lista[8].get()}) Você possui '
+                                                                      f'apenas ({pega_qtn}) papeis')
 
             # pondo no estado norma para editar
             lista[3].configure(state='normal')
@@ -1544,4 +1536,5 @@ class Application:
             return False
 
 
-Application().iniciar()
+if __name__ == '__main__':
+    Application().iniciar()
