@@ -14,7 +14,8 @@ class BancoDeDados:
     def __init__(self, nome_banco):
         # __init__ vai iniciar as funções assim que a classe for chamada
         self.__abrirBanco(nome_banco)
-        self.__criarTabela(nomeTabela='Ativos', colunasEDados='Ativo         VARCHAR(7) PRIMARY KEY')
+        self.__criarTabela(nomeTabela='Ativos', colunasEDados='Ativo         VARCHAR(7) PRIMARY KEY,'
+                                                              'pp_total      INTEGER')
         self.__criarTabela(nomeTabela='Acoes',
                            colunasEDados='id_acao                INTEGER        PRIMARY KEY     AUTOINCREMENT,'
                                          'acao                   VARCHAR(7),'
@@ -298,6 +299,23 @@ class Funcs:
             messagebox.showerror('Controle de investimentos',
                                  'O campo "Tipo Operação" não possui uma opção de compra ou venda!')
             return False
+        # garantindo que não venda mais do que tem
+        if self.lista[4].get() == 'Venda':
+            ppTotais = banco.select(select="pp_total", from1="Ativos", where_c=True, where=f"Ativo='{self.lista[9]}'")
+            valida = ppTotais[0][0] - int(self.lista[2].get())
+            if ppTotais:
+                if 0 < valida < ppTotais[0][0]:
+                    pass
+                else:
+                    messagebox.showerror('Controle de investimentos',
+                                         f'Você não pode vender mais do que você tem.'
+                                         f'\nVocê possui {ppTotais[0][0]} papeis')
+                    return False
+            else:
+                messagebox.showerror('Controle de investimentos',
+                                     f'Você não possui papeis suficientes para vender nesse ativo ({self.lista[9]})'
+                                     f' não foi cadastrado!')
+                return False
 
         # garantindo que em VALOR OP. os valores numéricos sejam numéricos
         if not self.lista[6].get() == '':
@@ -369,7 +387,7 @@ class Funcs:
         if not update:
             print('Vaerificou se já existe ativo com esse nome')
             # não existir
-            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}','{34}', '{32}'"):
+            if banco.introduzirDados('Ativos', False, f"'{self.lista[9]}', '0'"):
                 banco.introduzirDados('Acoes', True, f"'{self.lista[9]}', '{self.lista[1].get()}',"
                                                      f"'{self.lista[2].get()}', '{self.lista[3].get()}',"
                                                      f"'{self.lista[4].get()}', '{self.lista[5].get()}',"
@@ -378,10 +396,12 @@ class Funcs:
                                                      f"'0'",
                                       "acao, data, quantidade_papeis, valor_unitario,tipo_de_ordem,"
                                       "corretagem,valor_da_opercao,imposto,valor_final, preco_medio, lucro")
-                # atualiza a tabela de ativos
                 # atualiza tabela de acoes
-                Funcs.preco_Med_Lucro(self.lista[9])
-                # diagnostico
+                ppTotal = Funcs.preco_Med_Lucro(self.lista[9])
+                # Atualiza total de papéis em Ativos
+                banco.atualizarTabela(nomeTabela="Ativos", set=f"pp_total='{ppTotal}'",
+                                      where=f"Ativo='{self.lista[9]}'")
+                # diagnóstico
                 banco.select('*', 'Acoes')
                 banco.select('*', 'Ativos')
                 # info para o usuario
@@ -401,7 +421,10 @@ class Funcs:
 
                 # atualiza a tabela de ativos
                 # atualiza tabela de acoes
-                Funcs.preco_Med_Lucro(self.lista[9])
+                ppTotal = Funcs.preco_Med_Lucro(self.lista[9])
+                # Atualiza total de papéis em Ativos
+                banco.atualizarTabela(nomeTabela="Ativos", set=f"pp_total='{ppTotal}'",
+                                      where=f"Ativo='{self.lista[9]}'")
                 # info para o usuario
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
                 # diagnostico
@@ -427,7 +450,11 @@ class Funcs:
                         valor_final =       '{self.lista[8]}'     """,
                     where=f"""id_acao = '{self.lista[10]}'"""
                 )
-                Funcs.preco_Med_Lucro()
+                # Atualiza tyabela de acoes
+                ppTotal = Funcs.preco_Med_Lucro(self.lista[11])
+                # Atualiza total de papéis em Ativos
+                banco.atualizarTabela(nomeTabela="Ativos", set=f"pp_total='{ppTotal}'",
+                                      where=f"Ativo='{self.lista[11]}'")
                 self.lista[9].destroy()
                 self.visualizar_investimentos('', EDITAR=True)
                 messagebox.showinfo('Controle de investimentos', 'Salvo com sucesso!!')
@@ -440,17 +467,17 @@ class Funcs:
         banco = BancoDeDados('Investimentos')
         if EDITAR:
             self.lista[0].delete(*self.lista[0].get_children())
-            lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data), valor_final, preco_medio, lucro",
-                                 from1='Acoes', order_by=True, coluna='data', ordem='DESC')
+            lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data), valor_final, tipo_de_ordem, lucro",
+                                 from1='Acoes', order_by=True, coluna="date('data')", ordem='DESC')
             for i in lista:
                 self.lista[0].insert("", END, values=i)
         else:
             if ativo:
                 self.variavel_1.delete(*self.variavel_1.get_children())
                 lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
-                                            " valor_final, preco_medio, lucro",
+                                            " valor_final, tipo_de_ordem, lucro",
                                      from1='Acoes', where=f"acao = '{evento}'",
-                                     order_by=True, where_ob=True, coluna='data', ordem='DESC')
+                                     order_by=True, where_ob=True, coluna="date('data')", ordem='DESC')
                 if not lista:
                     return False
                 else:
@@ -460,8 +487,8 @@ class Funcs:
             else:
                 self.variavel_1.delete(*self.variavel_1.get_children())
                 lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
-                                            " valor_final, preco_medio, lucro",
-                                     from1='Acoes', order_by=True, coluna='data', ordem='DESC')
+                                            " valor_final, tipo_de_ordem, lucro",
+                                     from1='Acoes', order_by=True, coluna="date('data')", ordem='DESC')
                 print(len(lista))
                 for i, dados in enumerate(lista):
                     self.variavel_1.insert("", END, values=dados)
@@ -526,9 +553,12 @@ class Funcs:
                                      coluna='data',
                                      ordem='ASC')
         # laço verificador
-        soma_papeis = precoMedio = papeis_restantes = 0
+        soma_papeis = 0
+        precoMedio = 0
+        papeis_restantes = 0
+        vend = 0
         for i, ordem in enumerate(dados_compras):
-            if 'Compra' in ordem:
+            if 'Compra' == ordem[4]:
                 if i == 0:
                     # calcula o preço médio
                     precoMedio = ordem[2] / ordem[1]
@@ -538,14 +568,20 @@ class Funcs:
                                           set=f"preco_medio='{round(precoMedio, 2)}'",
                                           where=f"id_acao='{ordem[0]}'")
                     soma_papeis += ordem[1]
+                    if vend == 0:
+                        papeis_restantes = soma_papeis
                 else:
-                    soma_papeis += ordem[1]
                     # consulta o último preço médio calculado
                     ultPrecoMedio = banco.select(select="preco_medio",
                                                  from1="Acoes",
                                                  where_c=True,
                                                  where=f"id_acao='{dados_compras[i - 1][0]}'")[0][0]
-                    precoMedio = ((soma_papeis - ordem[1] * ultPrecoMedio) + ordem[2]) / soma_papeis
+                    # verifica se houve uma venda, caso, sim, o cálculo do preço médio diferirá para o resultado certo
+                    if vend == 0:
+                        soma_papeis += ordem[1]
+                        precoMedio = (((soma_papeis - ordem[1]) * ultPrecoMedio) + ordem[2]) / soma_papeis
+                    else:
+                        precoMedio = ((papeis_restantes * ultPrecoMedio) + ordem[2]) / soma_papeis
                     print(f"CALCULO\n"
                           f"({soma_papeis - ordem[1]} * {ultPrecoMedio}) + {ordem[2]}\n"
                           f"───────────────────────\t=\t{round(precoMedio, 2)}\n"
@@ -554,18 +590,43 @@ class Funcs:
                     banco.atualizarTabela(nomeTabela="Acoes",
                                           set=f"preco_medio='{round(precoMedio, 2)}'",
                                           where=f"id_acao='{ordem[0]}'")
-                    papeis_restantes = soma_papeis
 
-            elif 'Venda' in ordem:
-                papeis_restantes = soma_papeis
-                # valor final da venda - (qtn desejado * ultimo PM venda) = lucro
-                lucro = ordem[2] - (ordem[1] * precoMedio)
-                # atualiza a tabela
-                banco.atualizarTabela(nomeTabela="Acoes",
-                                      set=f"lucro='{round(lucro, 2)}', preco_medio='{round(precoMedio, 2)}'",
-                                      where=f"id_acao='{ordem[0]}'")
-                # papeis restantes na venda
-                papeis_restantes = soma_papeis - ordem[1]
+                    # verifica se uma venda foi feita, caso, sim, o cálculo dos papaies restantes diferirá
+                    if vend == 1:
+                        papeis_restantes = papeis_restantes + ordem[1]
+                    elif vend == 0:
+                        papeis_restantes = soma_papeis
+
+            elif 'Venda' == ordem[4]:
+                # verifica se é a primeira venda, caso seja a segunda, a lógica para o cálculo dos papéis
+                # restantes diferirá para o resultado desejado
+                if vend == 0:
+                    # contagem da venda
+                    vend += 1
+                    # valor final da venda - (qtn desejado * ultimo PM venda) = lucro
+                    lucro = ordem[2] - (ordem[1] * precoMedio)
+                    # atualiza a tabela
+                    banco.atualizarTabela(nomeTabela="Acoes",
+                                          set=f"lucro='{round(lucro, 2)}'",
+                                          where=f"id_acao='{ordem[0]}'")
+                    # papeis restantes na venda
+                    papeis_restantes = soma_papeis - ordem[1]
+                    # impressão do cálculo
+                    print(
+                        f"{ordem[2]} - ({ordem[1]} * {round(precoMedio, 2)}) = {round(lucro, 2)}\n"
+                        f"Restam {papeis_restantes}")
+                else:
+                    # valor final da venda - (qtn desejado * ultimo PM venda) = lucro
+                    lucro = ordem[2] - (ordem[1] * precoMedio)
+                    # atualiza a tabela
+                    banco.atualizarTabela(nomeTabela="Acoes",
+                                          set=f"lucro='{round(lucro, 2)}'",
+                                          where=f"id_acao='{ordem[0]}'")
+                    # papeis restantes na venda
+                    papeis_restantes = papeis_restantes - ordem[1]
+                    # impressão do cálculo
+                    print(f"{ordem[2]} - ({ordem[1]} * {round(precoMedio, 2)}) = {round(lucro, 2)}\n"
+                          f"Restam {papeis_restantes}")
 
         return papeis_restantes
 
@@ -644,11 +705,11 @@ class Application:
                         self.treeview.item(id_list, "values")[0], self.treeview.item(id_list, "values")[1]
                     ).salvar(update=True)
                 except ValueError as err:
-                    print(err)
-                    messagebox.showerror(title="ERROR", message="Não há itens para remover!")
+                    print(err, ' erro de valor')
+                    messagebox.showerror(title="ERROR", message="Falha ao editar")
                 except TypeError as err:
-                    print(err)
-                    messagebox.showerror(title="ERROR", message="Não há itens para remover!")
+                    print(err, 'error de tipagem')
+                    messagebox.showerror(title="ERROR", message="Falha ao editar")
         elif func == 4:
             self.__tela_editar()
         elif func == 9:
@@ -832,24 +893,12 @@ class Application:
                 # calculo do valor final
                 valor_final = imposto + valor_operacao
             elif lista[7].get() == 'Venda':
-                # Verifica se pode vender
-                validar = False
-                pega_qtn = Funcs.preco_Med_Lucro(lista[8].get())  # pega quantidade de papaies do ativo em questao
-                print(pega_qtn, ' - retorno')
-                if pega_qtn - lista[0] > 0:
-                    validar = True
-                if validar:
-                    # calculo do valor da operação
-                    valor_operacao = (lista[0] * lista[1]) - lista[2]
-                    # calculo do imposto
-                    imposto = valor_operacao * (0.0300 / 100)
-                    # calculo do valor final
-                    valor_final = valor_operacao - imposto
-                else:
-                    messagebox.showerror('Controle de investimentos', 'Você não pode vender uma quantidade de papeis'
-                                                                      ' que não possui!\n'
-                                                                      f'Para esse ativo ({lista[8].get()}) Você possui '
-                                                                      f'apenas ({pega_qtn}) papeis')
+                # calculo do valor da operação
+                valor_operacao = (lista[0] * lista[1]) - lista[2]
+                # calculo do imposto
+                imposto = valor_operacao * (0.0300 / 100)
+                # calculo do valor final
+                valor_final = valor_operacao - imposto
 
             # pondo no estado norma para editar
             lista[3].configure(state='normal')
@@ -991,6 +1040,14 @@ class Application:
             for i in dados:
                 if 'Venda' in i:
                     lucro = lucro + i[1]
+        else:
+            lucroLista = banco.select(select="lucro",
+                                      from1="Acoes",
+                                      where_c=True,
+                                      where="tipo_de_ordem='Venda' ORDER BY date('data')")
+            lucro = 0
+            for ordem in lucroLista:
+                lucro += ordem[0]
         # cria uma tela
         self.__nova_tela(width=1100, height=500)
         # criando frame
@@ -1026,7 +1083,7 @@ class Application:
             query = f"SELECT acao, strftime('%d/%m/%Y', data)," \
                     f" quantidade_papeis, valor_unitario, tipo_de_ordem, corretagem," \
                     f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes" \
-                    f" WHERE acao='{filtro}' ORDER BY data DESC"
+                    f" WHERE acao='{filtro}' ORDER BY date('data')"
             df = pd.read_sql_query(query, conn)
             print(df.keys())
             novo_df = {'Ação': df['acao'],
@@ -1052,7 +1109,7 @@ class Application:
             conn = sqlite3.connect('Investimentos.db')
             query = f"SELECT acao, strftime('%d/%m/%Y', data), quantidade_papeis, valor_unitario, tipo_de_ordem," \
                     f" corretagem," \
-                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes ORDER BY data DESC"
+                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes ORDER BY date('data')"
             df = pd.read_sql_query(query, conn)
             print(df.values)
             novo_df = {'Ação': df['acao'],
@@ -1075,7 +1132,7 @@ class Application:
             texto_tabela.place(relx=0.01, rely=0, relwidth=0.975, relheight=0.95)
 
     def __labels_precoM_lucroP(self, preco_medio=0, lucro_prejuizo=0, possui=0, valor=0):
-        fomatado = [f'R${preco_medio}', f'R${lucro_prejuizo}', f'R${valor}']
+        fomatado = [f'R${preco_medio}', f'R${lucro_prejuizo}', f'R${round(valor, 2)}']
         print(lucro_prejuizo)
         #   |---LABEL---|
         self.lbl_precoMedio = Label(self.tree_frame,
@@ -1130,6 +1187,7 @@ class Application:
                     self.treeview.heading(col, text=col)
 
         def on_selected(event):
+            banco = BancoDeDados('Investimentos')
             funcao = Funcs(self.treeview)
             if self.filtrando.get() != 'TODOS':
                 # Destroi labels anteriores
@@ -1149,8 +1207,10 @@ class Application:
                                      where_c=True,
                                      where=f"acao='{self.filtrando.get()}'")
                 possui = Funcs.preco_Med_Lucro(self.filtrando.get())
-                valor = dados[-1][0] * possui
-                preco_medio = round(dados[-1][0], 2)
+                valor = preco_medio = 0
+                if dados:
+                    valor = dados[-1][0] * possui
+                    preco_medio = round(dados[-1][0], 2)
                 lucro = 0
                 for i in dados:
                     if 'Venda' in i:
@@ -1186,7 +1246,14 @@ class Application:
                                           fg='white', borderwidth=2, highlightbackground='black',
                                           command=lambda: self.__frame_detalhe(self.filtrando.get()))
                 self.bt_detalhar.place(relx=0.33, rely=0.92, relheight=0.07, relwidth=0.3)
-                self.__labels_precoM_lucroP()
+                lucroLista = banco.select(select="lucro",
+                                          from1="Acoes",
+                                          where_c=True,
+                                          where="tipo_de_ordem='Venda' ORDER BY date('data')")
+                lucro_Total = 0
+                for ordem in lucroLista:
+                    lucro_Total += ordem[0]
+                self.__labels_precoM_lucroP(lucro_prejuizo=lucro_Total)
 
         def combobox():
             # variavel para ComboBox
@@ -1252,12 +1319,12 @@ class Application:
         # |---TREEVIEW---|
         self.treeview.place(rely=0.13, relx=0.015, relwidth=0.937, relheight=0.79)
         self.treeview["columns"] = ("ID", "Cod. Ativo",
-                                    "Data", "Valor final", "Preço Médio", "Lucro")
+                                    "Data", "Valor final", "C/V", "Lucro")
         self.treeview['show'] = 'headings'  # mostrar os cabeçalhos
         # usado para ajudar na lógica do filtro
         self.estado_atual = {'ID': (False,), 'Cod. Ativo': (False,),
                              'Data': (False,), 'Valor final': (False,),
-                             "Preço Médio": (False,), "Lucro": (False,)}
+                             "C/V": (False,), "Lucro": (False,)}
         # cabeçalho
         self.treeview.heading('ID', text='ID',
                               command=lambda: filtar('ID', 'ID'))
@@ -1267,8 +1334,8 @@ class Application:
                               command=lambda: filtar('Data', 'Data'))
         self.treeview.heading('Valor final', text='V. Final',
                               command=lambda: filtar('Valor final', 'Valor final', numeric=True))
-        self.treeview.heading("Preço Médio", text="P. Médio",
-                              command=lambda: filtar("Preço Médio", "Preço Médio", numeric=True))
+        self.treeview.heading("C/V", text="C/V",
+                              command=lambda: filtar("C/V", "C/V"))
         self.treeview.heading("Lucro", text="Lucro",
                               command=lambda: filtar("Lucro", "Lucro", numeric=True))
         # espaçamento das colunas
@@ -1276,7 +1343,7 @@ class Application:
         self.treeview.column("Cod. Ativo", width=90, anchor='c', minwidth=90)
         self.treeview.column("Data", width=90, anchor='c', minwidth=90)
         self.treeview.column('Valor final', width=90, anchor='c', minwidth=90)
-        self.treeview.column("Preço Médio", width=90, anchor='c', minwidth=90)
+        self.treeview.column("C/V", width=90, anchor='c', minwidth=90)
         self.treeview.column("Lucro", width=90, anchor='c', minwidth=90)
         # |---CROLLBAR---|
         self.scrollbar_vertical.place(relx=0.955, rely=0.13, relheight=0.79)
@@ -1398,24 +1465,12 @@ class Application:
                 # calculo do valor final
                 valor_final = imposto + valor_operacao
             elif lista[7].get() == 'Venda':
-                # Verifica se pode vender
-                validar = False
-                pega_qtn = Funcs.preco_Med_Lucro(lista[8].get())  # pega quantidade de papaies do ativo em questao
-                print(pega_qtn, ' - retorno')
-                if pega_qtn - lista[0] > 0:
-                    validar = True
-                if validar:
-                    # calculo do valor da operação
-                    valor_operacao = (lista[0] * lista[1]) - lista[2]
-                    # calculo do imposto
-                    imposto = valor_operacao * (0.0300 / 100)
-                    # calculo do valor final
-                    valor_final = valor_operacao - imposto
-                else:
-                    messagebox.showerror('Controle de investimentos', 'Você não pode vender uma quantidade de papeis'
-                                                                      ' que não possui!\n'
-                                                                      f'Para esse ativo ({lista[8].get()}) Você possui '
-                                                                      f'apenas ({pega_qtn}) papeis')
+                # calculo do valor da operação
+                valor_operacao = (lista[0] * lista[1]) - lista[2]
+                # calculo do imposto
+                imposto = valor_operacao * (0.0300 / 100)
+                # calculo do valor final
+                valor_final = valor_operacao - imposto
 
             # pondo no estado norma para editar
             lista[3].configure(state='normal')
