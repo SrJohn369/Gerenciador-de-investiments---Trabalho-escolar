@@ -1057,7 +1057,7 @@ class Application:
         lbl_possui = Label(self.new_window, text=f'Possui: {possui if possui > 0 else "─"}',
                            font=('KacstOffice', '10'),
                            bg='black', fg='#2fc7f4')
-        lbl_valor = Label(self.new_window, text=f'Valor Total: R$ {valor if valor > 0 else "─"}',
+        lbl_valor = Label(self.new_window, text=f'Valor Total: R$ {round(valor, 2) if valor > 0 else "─"}',
                           font=('KacstOffice', '10'),
                           bg='black', fg='#2fc7f4')
         lbl_precoMedio = Label(self.new_window, text=f'Preço Médio: R$ {preco_medio if possui > 0 else "─"}',
