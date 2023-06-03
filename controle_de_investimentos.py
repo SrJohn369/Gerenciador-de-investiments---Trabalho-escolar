@@ -302,8 +302,8 @@ class Funcs:
         # garantindo que não venda mais do que tem
         if self.lista[4].get() == 'Venda':
             ppTotais = banco.select(select="pp_total", from1="Ativos", where_c=True, where=f"Ativo='{self.lista[9]}'")
-            valida = ppTotais[0][0] - int(self.lista[2].get())
             if ppTotais:
+                valida = ppTotais[0][0] - int(self.lista[2].get())
                 if 0 < valida < ppTotais[0][0]:
                     pass
                 else:
