@@ -607,7 +607,7 @@ class Funcs:
                     lucro = ordem[2] - (ordem[1] * precoMedio)
                     # atualiza a tabela
                     banco.atualizarTabela(nomeTabela="Acoes",
-                                          set=f"lucro='{round(lucro, 2)}'",
+                                          set=f"lucro='{round(lucro, 2)}', preco_medio='{round(precoMedio, 2)}'",
                                           where=f"id_acao='{ordem[0]}'")
                     # papeis restantes na venda
                     papeis_restantes = soma_papeis - ordem[1]
@@ -620,7 +620,7 @@ class Funcs:
                     lucro = ordem[2] - (ordem[1] * precoMedio)
                     # atualiza a tabela
                     banco.atualizarTabela(nomeTabela="Acoes",
-                                          set=f"lucro='{round(lucro, 2)}'",
+                                          set=f"lucro='{round(lucro, 2)}', preco_medio='{round(precoMedio, 2)}'",
                                           where=f"id_acao='{ordem[0]}'")
                     # papeis restantes na venda
                     papeis_restantes = papeis_restantes - ordem[1]
@@ -1206,6 +1206,7 @@ class Application:
                                      from1='Acoes',
                                      where_c=True,
                                      where=f"acao='{self.filtrando.get()}'")
+                print(dados, 'estes são os dados')
                 possui = Funcs.preco_Med_Lucro(self.filtrando.get())
                 valor = preco_medio = 0
                 if dados:
