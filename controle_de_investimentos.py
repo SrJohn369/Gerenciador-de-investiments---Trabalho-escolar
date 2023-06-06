@@ -302,8 +302,8 @@ class Funcs:
         # garantindo que não venda mais do que tem
         if self.lista[4].get() == 'Venda':
             ppTotais = banco.select(select="pp_total", from1="Ativos", where_c=True, where=f"Ativo='{self.lista[9]}'")
+            valida = ppTotais[0][0] - int(self.lista[2].get())
             if ppTotais:
-                valida = ppTotais[0][0] - int(self.lista[2].get())
                 if 0 < valida < ppTotais[0][0]:
                     pass
                 else:
@@ -468,7 +468,7 @@ class Funcs:
         if EDITAR:
             self.lista[0].delete(*self.lista[0].get_children())
             lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data), valor_final, tipo_de_ordem, lucro",
-                                 from1='Acoes', order_by=True, coluna="date('data')", ordem='DESC')
+                                 from1='Acoes', order_by=True, coluna="data", ordem='ASC')
             for i in lista:
                 self.lista[0].insert("", END, values=i)
         else:
@@ -477,7 +477,7 @@ class Funcs:
                 lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
                                             " valor_final, tipo_de_ordem, lucro",
                                      from1='Acoes', where=f"acao = '{evento}'",
-                                     order_by=True, where_ob=True, coluna="date('data')", ordem='DESC')
+                                     order_by=True, where_ob=True, coluna="data", ordem='ASC')
                 if not lista:
                     return False
                 else:
@@ -488,7 +488,7 @@ class Funcs:
                 self.variavel_1.delete(*self.variavel_1.get_children())
                 lista = banco.select(select="id_acao, acao, strftime('%d/%m/%Y', data),"
                                             " valor_final, tipo_de_ordem, lucro",
-                                     from1='Acoes', order_by=True, coluna="date('data')", ordem='DESC')
+                                     from1='Acoes', order_by=True, coluna="data", ordem='ASC')
                 print(len(lista))
                 for i, dados in enumerate(lista):
                     self.variavel_1.insert("", END, values=dados)
@@ -1109,9 +1109,9 @@ class Application:
             conn = sqlite3.connect('Investimentos.db')
             query = f"SELECT acao, strftime('%d/%m/%Y', data), quantidade_papeis, valor_unitario, tipo_de_ordem," \
                     f" corretagem," \
-                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes ORDER BY date('data')"
+                    f"valor_da_opercao, imposto, valor_final, preco_medio, lucro FROM Acoes ORDER BY data"
             df = pd.read_sql_query(query, conn)
-            print(df.values)
+            print(df.values, '─── DF')
             novo_df = {'Ação': df['acao'],
                        'Data': df["strftime('%d/%m/%Y', data)"],
                        'Papeis': df['quantidade_papeis'],
