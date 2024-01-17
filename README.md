@@ -1,4 +1,4 @@
-# trabalhode_MAD
+# Gerenciador de Investimentos (Trabalho escolar)
 Trabalho desenvolvido por:
 
 João Victor - Dev(Compilador dos codigos - fullstack) e Gerente do projeto
