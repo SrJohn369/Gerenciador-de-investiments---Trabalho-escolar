@@ -1,17 +1,16 @@
 # Gerenciador de Investimentos (Trabalho escolar)
 
 O programa visa gerenciar ordens de negociações da B3(BRASIL-BOLSA-BALCÃO) guardando informações, editando informações e excluido as mesmas se nescessário.
-
 Os calculos são feitos de forma automática visando a agilidade para guardar os dados. 
-
 Os dados podem ser visualizados ao gosto do cliente, podendo filtrar os ativos e a ordem sendo crescente ou decrescente.
+![alt text](img/image.png)
 
 ## Tecnologias
-### Linguagemns usadas
-Python 3.10
-### Frameworks
-Tkinter
-AwesomeTkinter
+![python](https://img.shields.io/badge/python-%233776AB?style=for-the-badge&logo=python&logoColor=yellow)
+
+## Funcionalidades
+### cadastrar
+
 
 ## Contribuidores
 Trabalho desenvolvido por:

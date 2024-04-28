@@ -785,7 +785,7 @@ class Application:
         if frame:
             self.__frame_Tela_Inicio()
         # Foto bg
-        self.imagem = tk.PhotoImage(file='b3.png')
+        self.imagem = tk.PhotoImage(file='img/b3.png')
         self.imagem.subsample(1, 1)
         self.imagem_fundo = Label(self.inicio_frame, image=self.imagem)
         self.imagem_fundo.place(x=180, y=140, relwidth=0.333, relheight=0.28)
@@ -925,7 +925,7 @@ class Application:
                                     self.entry_imposto, self.entry_valor_final, self.inicio_frame, self.varCV,
                                     self.entry_codigo)
 
-        self.image = PhotoImage(file="rsz_b3_logo_white(menor).png")
+        self.image = PhotoImage(file="img/rsz_b3_logo_white(menor).png")
         self.imagem_fundo = Label(self.inicio_frame, image=self.image, background='black')
         self.imagem_fundo.place(relx=0.25, rely=0.55)
 
@@ -1272,7 +1272,7 @@ class Application:
             self.filtrando.configure(width=8)
             self.filtrando.bind("<<ComboboxSelected>>", on_selected)
 
-        self.image = PhotoImage(file="rsz_1b3_logo_white.png")
+        self.image = PhotoImage(file="img/rsz_1b3_logo_white.png")
         self.imagem_fundo = Label(self.inicio_frame, image=self.image, background='black')
         self.imagem_fundo.place(relx=0.55, rely=0.01, relwidth=0.25, relheight=0.17)
         #   CRIANDO BOTOES e LABELS frame inicio_frame
